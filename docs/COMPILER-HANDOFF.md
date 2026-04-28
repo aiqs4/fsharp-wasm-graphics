@@ -26,7 +26,7 @@ export FSHARP_WASM_DIR=/path/to/fsharp-wasm   # points to the fsharp-wasm source
 # Use the fsharp-wasm-runtime build pipeline to compile your .fsproj:
 node build/build.js                             # from fsharp-wasm-runtime root
 # or compile directly:
-dotnet run --project "$FSHARP_WASM_DIR/tools/fsharp-wasm-cli" -- \
+dotnet run --project "$FSHARP_WASM_DIR/tools/FSharp.Wasm.Cli" -- \
     YourProject.fsproj --outDir dist/ --noCache
 ```
 
