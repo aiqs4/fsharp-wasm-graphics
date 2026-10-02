@@ -9,7 +9,7 @@ let main _ =
     let mutable totalFail = 0
 
     let originalOut = System.Console.Out
-    let sw = new System.IO.StringWriter()
+    let sw = System.IO.StringWriter()
     System.Console.SetOut(sw)
 
     ScalarTests.run ()
