@@ -1,13 +1,20 @@
 module FSharp.Graphics.DesktopRunner.Program
 
 open System
+open System.IO
+open System.Diagnostics
 open Silk.NET.Windowing
 open Silk.NET.Maths
 open Silk.NET.OpenGL
 open SkiaSharp
+open FSharp.Graphics
 open FSharp.Graphics.DesktopRunner.OpcodeDecoder
+open FSharp.Graphics.Shared.DemoScene
+open FSharp.Graphics.Primitives
 
-// Safe-nullness compliant state
+// TODO: Füge hier den Namespace ein, in dem deine Szene definiert ist!
+open FSharp.Graphics.Demo 
+
 let mutable grContext: GRContext option = None
 let mutable renderTarget: GRBackendRenderTarget option = None
 let mutable surface: SKSurface option = None
@@ -16,7 +23,11 @@ let mutable defaultTypeface: SKTypeface option = None
 
 [<EntryPoint>]
 let main _ =
-    // FS0256 Fix: Options must be mutable to assign properties
+    // 1. Initialisiere DEINE Szene und den Cache VOR dem Fenster-Loop
+    // (Ersetze 'buildScene()' durch deinen echten Aufruf)
+    let scene = buildScene() 
+    let shapeCache = ShapeCache(256)
+
     let mutable options = WindowOptions.Default
     options.Size <- Vector2D<int>(1024, 768)
     options.Title <- "FSharp.Graphics | Native Skia+Silk.NET Runner"
@@ -27,25 +38,12 @@ let main _ =
     let window = Window.Create(options)
     let mutable gl: GL option = None
 
-    // window.add_Load(Action(fun () ->
-    //     gl <- Some(GL.GetApi(window))
-    //     
-    //     let glif = GRGlInterface.Create()
-    //     glInterface <- Some glif
-    //     grContext <- Some(GRContext.CreateGl(glif))
-    //     
-    //     let tf = SKTypeface.FromFamilyName("Arial")
-    //     defaultTypeface <- Some(if isNull tf then SKTypeface.Default else tf)
-    // ))
-
     window.add_Load(Action(fun () ->
         let api = GL.GetApi(window)
         gl <- Some api
         
-        // Nullbarkeit von window.GLContext absichern
         match Option.ofObj window.GLContext with
         | Some nativeContext ->
-            // Explizite Erstellung des von SkiaSharp erwarteten Delegate-Typs
             let getGlProc = GRGlGetProcedureAddressDelegate(fun name ->
                 let mutable ptr = IntPtr.Zero
                 if nativeContext.TryGetProcAddress(name, &ptr) then ptr
@@ -59,18 +57,12 @@ let main _ =
             | Some iface ->
                 let ctx = GRContext.CreateGl(iface)
                 grContext <- Option.ofObj ctx
-                
-                if Option.isNone grContext then
-                    printfn "FEHLER: GRContext konnte nicht aus dem Interface erstellt werden!"
-            | None ->
-                printfn "FEHLER: GRGlInterface konnte über Silk.NET nicht erstellt werden!"
-        | None ->
-            printfn "FEHLER: window.GLContext ist null!"
+            | None -> ()
+        | None -> ()
             
         let tf = SKTypeface.FromFamilyName("Arial")
         defaultTypeface <- Option.ofObj (if isNull tf then SKTypeface.Default else tf)
     ))
-
 
     window.add_Resize(Action<Vector2D<int>>(fun newSize ->
         match grContext with
@@ -92,18 +84,11 @@ let main _ =
             ctx.ResetContext()
             let canvas = surf.Canvas
             
-            // ------------------------------------------------------------------
-            // TODO: Plug your actual public graphics pipeline in here.
-            // Since FSharp.Graphics.Render.Internal is locked, you must call 
-            // whatever public entrypoint you have that returns the opcode buffer.
-            // e.g., let bufferArray = Render.encode myScene
-            // ------------------------------------------------------------------
+            // 2. Rufe DEINE echte Pipeline über die neue öffentliche Funktion auf
+            let (bufferArray, length) = Pipeline.encodeScene scene shapeCache
             
-            // A dummy frame buffer so this file safely compiles and runs a test clear:
-            // [BeginFrame; R=40, G=44, B=52, A=255; EndFrame]
-            let bufferArray = [| 0xFEuy; 40uy; 44uy; 52uy; 255uy; 0xFFuy |] 
-            
-            let span = ReadOnlySpan<byte>(bufferArray, 0, bufferArray.Length)
+            // 3. Spanne lesen und zeichnen (Zero-Allocation)
+            let span = ReadOnlySpan<byte>(bufferArray, 0, length)
             let decoder = SkiaOpcodeDecoder(canvas, tf)
             decoder.DecodeAndRender(span)
 

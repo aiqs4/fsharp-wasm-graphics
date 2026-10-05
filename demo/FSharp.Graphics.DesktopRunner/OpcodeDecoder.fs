@@ -75,8 +75,10 @@ type SkiaOpcodeDecoder(canvas: SKCanvas, typeface: SKTypeface) =
                 else
                     canvas.DrawRect(rect, fillPaint)
 
+            // TODO: missing 0x02 to 0x04
+
             // 0x02: DrawTextBatch
-            | 0x02uy ->
+            | 0x05uy ->
                 let _fontId = readUInt64 buffer &offset
                 let sizePx = readSingle buffer &offset
                 
@@ -109,7 +111,7 @@ type SkiaOpcodeDecoder(canvas: SKCanvas, typeface: SKTypeface) =
                     canvas.DrawText(blob, 0f, 0f, textPaint)
 
             // 0x04: PushClip
-            | 0x04uy ->
+            | 0x10uy ->
                 let x = readSingle buffer &offset
                 let y = readSingle buffer &offset
                 let w = readSingle buffer &offset
@@ -118,11 +120,11 @@ type SkiaOpcodeDecoder(canvas: SKCanvas, typeface: SKTypeface) =
                 canvas.ClipRect(SKRect(x, y, x + w, y + h), SKClipOperation.Intersect, true)
 
             // 0x05: PopClip
-            | 0x05uy ->
+            | 0x11uy ->
                 canvas.Restore()
 
             // 0x10: SetOpacity
-            | 0x10uy ->
+            | 0x14uy ->
                 let alpha = readSingle buffer &offset
                 fillPaint.Color <- fillPaint.Color.WithAlpha(byte (alpha * 255.0f))
 

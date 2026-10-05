@@ -52,6 +52,8 @@
     <!-- TEA runtime -->
     <Compile Include="Tea/Tea.fs" />
     <Compile Include="Tea/Runtime.fs" />
+
+    <Compile Include="Pipeline.fs" />
   </ItemGroup>
 
 </Project>

@@ -10,6 +10,7 @@
   <ItemGroup>
     <Compile Include="Png.fs" />
     <Compile Include="Rasterizer.fs" />
+    <Compile Include="DemoScene.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

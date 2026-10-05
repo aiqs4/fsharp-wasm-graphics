@@ -1,0 +1,146 @@
+module FSharp.Graphics.DesktopRunner.Program
+
+open System
+open System.IO
+open System.Diagnostics
+open Silk.NET.Windowing
+open Silk.NET.Maths
+open Silk.NET.OpenGL
+open SkiaSharp
+open FSharp.Graphics.DesktopRunner.OpcodeDecoder
+
+let mutable grContext: GRContext option = None
+let mutable renderTarget: GRBackendRenderTarget option = None
+let mutable surface: SKSurface option = None
+let mutable glInterface: GRGlInterface option = None
+let mutable defaultTypeface: SKTypeface option = None
+
+/// Mock-Encoder: Baut einen echten Buffer nach deinem Opcode-Protokoll, 
+/// bis du deine echte FSharp.Graphics Pipeline hier einklinkst.
+let encodeDemoFrame (time: float32) =
+    use ms = new MemoryStream(256)
+    use bw = new BinaryWriter(ms)
+
+    // 0xFE: BeginFrame (Dunkelblau/Grau)
+    bw.Write(0xFEuy)
+    bw.Write(30uy); bw.Write(34uy); bw.Write(44uy); bw.Write(255uy)
+
+    // 0x01: DrawRect (Statisches, orangefarbenes abgerundetes Rechteck)
+    bw.Write(0x01uy)
+    bw.Write(100.0f); bw.Write(100.0f) // X, Y
+    bw.Write(400.0f); bw.Write(250.0f) // W, H
+    bw.Write(40.0f)                    // Radius
+    bw.Write(255uy); bw.Write(120uy); bw.Write(50uy); bw.Write(255uy) // RGBA
+
+    // 0x12: PushTransform (Rotierende Matrix um das Zentrum des orangenen Rechtecks)
+    bw.Write(0x12uy)
+    let cosT = MathF.Cos(time * 2.0f)
+    let sinT = MathF.Sin(time * 2.0f)
+    
+    // M11, M12, M21, M22
+    bw.Write(cosT); bw.Write(sinT)
+    bw.Write(-sinT); bw.Write(cosT)
+    
+    // Translation (M31, M32) berechnen, um am Platz (300, 225) zu rotieren
+    let cx, cy = 300.0f, 225.0f
+    bw.Write(cx - (cx * cosT - cy * sinT))
+    bw.Write(cy - (cx * sinT + cy * cosT))
+
+    // 0x01: DrawRect (Grünes Rechteck, das durch die Matrix rotiert wird)
+    bw.Write(0x01uy)
+    bw.Write(250.0f); bw.Write(175.0f) // X, Y (relativ zum unrotierten Zustand)
+    bw.Write(100.0f); bw.Write(100.0f) // W, H
+    bw.Write(15.0f)                    // Radius
+    bw.Write(50uy); bw.Write(200uy); bw.Write(120uy); bw.Write(240uy) // RGBA (leicht transparent)
+
+    // 0x13: PopTransform
+    bw.Write(0x13uy)
+
+    // 0xFF: EndFrame
+    bw.Write(0xFFuy)
+
+    ms.ToArray() // (Hinweis: Dies allokiert natürlich pro Frame. Dein echter Code nutzt dann direkt den gepoolten Array!)
+
+[<EntryPoint>]
+let main _ =
+    let mutable options = WindowOptions.Default
+    options.Size <- Vector2D<int>(1024, 768)
+    options.Title <- "FSharp.Graphics | Native Skia+Silk.NET Runner"
+    options.VSync <- true
+    options.PreferredDepthBufferBits <- 0
+    options.PreferredStencilBufferBits <- 8
+
+    let window = Window.Create(options)
+    let mutable gl: GL option = None
+    let sw = Stopwatch.StartNew() // Für den Zeitverlauf der Animation
+
+    window.add_Load(Action(fun () ->
+        let api = GL.GetApi(window)
+        gl <- Some api
+        
+        match Option.ofObj window.GLContext with
+        | Some nativeContext ->
+            let getGlProc = GRGlGetProcedureAddressDelegate(fun name ->
+                let mutable ptr = IntPtr.Zero
+                if nativeContext.TryGetProcAddress(name, &ptr) then ptr
+                else IntPtr.Zero
+            )
+            
+            let glif = GRGlInterface.CreateOpenGl(getGlProc)
+            glInterface <- Option.ofObj glif
+            
+            match glInterface with
+            | Some iface ->
+                let ctx = GRContext.CreateGl(iface)
+                grContext <- Option.ofObj ctx
+            | None -> ()
+        | None -> ()
+            
+        let tf = SKTypeface.FromFamilyName("Arial")
+        defaultTypeface <- Option.ofObj (if isNull tf then SKTypeface.Default else tf)
+    ))
+
+    window.add_Resize(Action<Vector2D<int>>(fun newSize ->
+        match grContext with
+        | Some ctx ->
+            surface |> Option.iter (fun s -> s.Dispose())
+            renderTarget |> Option.iter (fun rt -> rt.Dispose())
+
+            let framebufferInfo = new GRGlFramebufferInfo(0u, 0x8058u)
+            let rt = new GRBackendRenderTarget(newSize.X, newSize.Y, 0, 8, framebufferInfo)
+            renderTarget <- Some rt
+            
+            surface <- Some(SKSurface.Create(ctx, rt, GRSurfaceOrigin.BottomLeft, SKColorType.Rgba8888))
+        | None -> ()
+    ))
+
+    window.add_Render(Action<double>(fun _delta ->
+        match surface, grContext, defaultTypeface with
+        | Some surf, Some ctx, Some tf ->
+            ctx.ResetContext()
+            let canvas = surf.Canvas
+            
+            // 1. Hole Framezeit und generiere das Opcode-Array (als Mock für Render.Encode)
+            let time = float32 sw.Elapsed.TotalSeconds
+            let bufferArray = encodeDemoFrame time
+            
+            // 2. Parsen ohne Allocation-Overhead (Zero-Allocation Span aus OpcodeDecoder.fs)
+            let span = ReadOnlySpan<byte>(bufferArray, 0, bufferArray.Length)
+            let decoder = SkiaOpcodeDecoder(canvas, tf)
+            decoder.DecodeAndRender(span)
+
+            canvas.Flush()
+            ctx.Flush()
+        | _ -> ()
+    ))
+
+    window.add_Closing(Action(fun () ->
+        surface |> Option.iter (fun x -> x.Dispose())
+        renderTarget |> Option.iter (fun x -> x.Dispose())
+        grContext |> Option.iter (fun x -> x.Dispose())
+        glInterface |> Option.iter (fun x -> x.Dispose())
+        defaultTypeface |> Option.iter (fun x -> x.Dispose())
+    ))
+
+    window.Run()
+    0

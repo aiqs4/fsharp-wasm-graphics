@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Compile Include="OpcodeDecoder.fs" />
+    <Compile Include="../FSharp.Graphics.Demo/DemoScene.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -22,8 +23,10 @@
 
   <!-- Replace these paths with the actual relative paths to your core F# graphics projects -->
   <ItemGroup>
-    <ProjectReference Include="..\..\src\FSharp.Graphics\FSharp.Graphics.fsproj" />
-    <ProjectReference Include="..\..\src\FSharp.Math\FSharp.Math.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics/FSharp.Graphics.fsproj" />
+    <!-- <ProjectReference Include="../FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" /> -->
+    <ProjectReference Include="../../src/FSharp.Math/FSharp.Math.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Demo/FSharp.Graphics.Demo.fsproj" />
   </ItemGroup>
 
 </Project>

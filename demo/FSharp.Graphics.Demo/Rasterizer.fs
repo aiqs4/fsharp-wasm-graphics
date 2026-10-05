@@ -153,7 +153,7 @@ let rasterizePrimitive (canvas: Canvas) (primitive: PrimitiveShape) =
                 let sdf' = sdf - sh.Spread
                 let blurRadius = max 1.0f sh.Blur
                 // Gaussian shadow: approximate with SDF remapping.
-                let t = ((-sdf') / blurRadius) |> max 0.0f |> min 1.0f
+                let t = (1.0f - sdf' / blurRadius) |> max 0.0f |> min 1.0f
                 let alpha = t * t * sh.Color.A
                 if alpha > 0.001f then
                     let shadowColor = { sh.Color with A = alpha }

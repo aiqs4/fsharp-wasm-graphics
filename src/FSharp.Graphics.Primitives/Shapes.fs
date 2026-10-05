@@ -43,7 +43,7 @@ module internal SdfMath =
     let inline clamp lo hi x = Scalar.clamp lo hi x
     let inline len2 (x: float32) (y: float32) = Scalar.sqrt (x * x + y * y)
 
-/// Rounded rectangle SDF
+/// Rounded rectangle SDF (Inigo Quilez 2D Box SDF)
 type RectSdf(bounds: Rect, radius: CornerRadius) =
     let cx = bounds.X + bounds.W * 0.5f
     let cy = bounds.Y + bounds.H * 0.5f
@@ -61,9 +61,14 @@ type RectSdf(bounds: Rect, radius: CornerRadius) =
                 elif px < 0.0f && py >= 0.0f then radius.BottomLeft
                 elif px >= 0.0f then radius.TopRight
                 else radius.TopLeft
-            let dx = Scalar.max' (qx - hw + r) 0.0f
-            let dy = Scalar.max' (qy - hh + r) 0.0f
-            SdfMath.len2 dx dy - r
+
+            let qx' = qx - hw + r
+            let qy' = qy - hh + r
+            let dx = Scalar.max' qx' 0.0f
+            let dy = Scalar.max' qy' 0.0f
+            let outsideDist = SdfMath.len2 dx dy
+            let insideDist = Scalar.min' (Scalar.max' qx' qy') 0.0f
+            outsideDist + insideDist - r
 
         member _.Bounds = bounds
         member _.CacheKey = hash (bounds, radius)
