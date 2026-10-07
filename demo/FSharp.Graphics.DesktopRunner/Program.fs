@@ -8,12 +8,10 @@ open Silk.NET.Maths
 open Silk.NET.OpenGL
 open SkiaSharp
 open FSharp.Graphics
+open FSharp.Graphics.Render
 open FSharp.Graphics.DesktopRunner.OpcodeDecoder
 open FSharp.Graphics.Shared.DemoScene
 open FSharp.Graphics.Primitives
-
-// TODO: Füge hier den Namespace ein, in dem deine Szene definiert ist!
-open FSharp.Graphics.Demo 
 
 let mutable grContext: GRContext option = None
 let mutable renderTarget: GRBackendRenderTarget option = None
@@ -23,8 +21,6 @@ let mutable defaultTypeface: SKTypeface option = None
 
 [<EntryPoint>]
 let main _ =
-    // 1. Initialisiere DEINE Szene und den Cache VOR dem Fenster-Loop
-    // (Ersetze 'buildScene()' durch deinen echten Aufruf)
     let scene = buildScene() 
     let shapeCache = ShapeCache(256)
 
@@ -84,10 +80,14 @@ let main _ =
             ctx.ResetContext()
             let canvas = surf.Canvas
             
-            // 2. Rufe DEINE echte Pipeline über die neue öffentliche Funktion auf
-            let (bufferArray, length) = Pipeline.encodeScene scene shapeCache
+            // -----------------
+            // let (bufferArray, length) = Pipeline.encodeScene scene shapeCache
+
+            let cachedTree = Internal.CachedNode.build scene
+            let drawList   = Internal.CachedNode.getDrawList cachedTree shapeCache
+            let (bufferArray, length) = Encode.encode drawList
+            // -----------------
             
-            // 3. Spanne lesen und zeichnen (Zero-Allocation)
             let span = ReadOnlySpan<byte>(bufferArray, 0, length)
             let decoder = SkiaOpcodeDecoder(canvas, tf)
             decoder.DecodeAndRender(span)

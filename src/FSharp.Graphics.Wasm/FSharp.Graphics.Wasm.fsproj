@@ -59,12 +59,15 @@
     <Compile Include="../FSharp.Graphics.Scene/Layout.fs" />
     <Compile Include="../FSharp.Graphics.Scene/ActorBuilder.fs" />
     <Compile Include="../FSharp.Graphics.Scene/Combinators.fs" />
+    <Compile Include="../FSharp.Graphics.Scene/Resolve.fs" />
+    <Compile Include="../FSharp.Graphics.Scene/Hit.fs" />
   </ItemGroup>
 
   <!-- ── FSharp.Graphics.Render ── -->
   <ItemGroup>
     <Compile Include="../FSharp.Graphics.Render/Diff.fs" />
     <Compile Include="../FSharp.Graphics.Render/CachedNode.fs" />
+    <Compile Include="../FSharp.Graphics.Render/Protocol.fs" />
     <Compile Include="../FSharp.Graphics.Render/Encode.fs" />
   </ItemGroup>
 

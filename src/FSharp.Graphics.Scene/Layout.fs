@@ -34,6 +34,10 @@ module LayoutEngine =
             { Width = Scalar.clamp constraints.MinWidth constraints.MaxWidth b.W
               Height = Scalar.clamp constraints.MinHeight constraints.MaxHeight b.H }
 
+        | GlyphRun(_, _, _, _, b) ->
+            { Width = Scalar.clamp constraints.MinWidth constraints.MaxWidth b.W
+              Height = Scalar.clamp constraints.MinHeight constraints.MaxHeight b.H }
+
         | Text(_, style) ->
             let approxWidth = Scalar.min' (style.SizePx * 10.0f) constraints.MaxWidth
             let approxHeight = style.SizePx * style.LineHeight
@@ -116,7 +120,7 @@ module LayoutEngine =
         match scene with
         | Empty -> []
 
-        | Shape _ | Text _ | Image _ -> [(scene, bounds)]
+        | Shape _ | Text _ | GlyphRun _ | Image _ -> [(scene, bounds)]
 
         | Group children ->
             children |> List.collect (layout bounds)

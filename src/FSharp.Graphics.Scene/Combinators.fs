@@ -8,7 +8,7 @@ module SceneCombinators =
     /// Recursively collect all leaf nodes from a scene tree
     let rec collectLeaves (s: Scene) : Scene list =
         match s with
-        | Shape _ | Text _ | Image _ -> [s]
+        | Shape _ | Text _ | Image _ | GlyphRun _ -> [s]
         | Empty -> []
         | Group children | Stack(_, children) ->
             children |> List.collect collectLeaves
@@ -25,7 +25,7 @@ module SceneCombinators =
     let rec countNodes (s: Scene) : int =
         match s with
         | Empty -> 0
-        | Shape _ | Text _ | Image _ -> 1
+        | Shape _ | Text _ | Image _ | GlyphRun _ -> 1
         | Group children | Stack(_, children) ->
             1 + (children |> List.sumBy countNodes)
         | Padding(_, child) | Clip(_, child)

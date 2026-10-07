@@ -15,3 +15,7 @@ module CornerRadius =
     let horizontal l r = { TopLeft = l; TopRight = r; BottomRight = r; BottomLeft = l }
     let vertical t b = { TopLeft = t; TopRight = t; BottomRight = b; BottomLeft = b }
     let create tl tr br bl = { TopLeft = tl; TopRight = tr; BottomRight = br; BottomLeft = bl }
+
+    let All = all
+    let Create = create
+    let Zero = zero

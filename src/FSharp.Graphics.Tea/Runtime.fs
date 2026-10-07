@@ -1,5 +1,6 @@
 namespace FSharp.Graphics.Tea
 
+open FSharp.Graphics.Core
 open FSharp.Graphics.Primitives
 open FSharp.Graphics.Scene
 open FSharp.Graphics.Render
@@ -14,6 +15,7 @@ type HeadlessRuntime<'Model, 'Msg> = {
 
 /// Runtime helpers (the impure part)
 module Runtime =
+    open FSharp.Graphics.Scene
 
     /// Run a TEA program headlessly, processing message batches.
     /// Returns encoded command buffers for each message batch.
@@ -46,7 +48,7 @@ module Runtime =
                     model <- m''
 
             // Render frame
-            let scene = program.View model
+            let scene = Resolve.resolve TextEngine.approximate System.Single.MaxValue (program.View model)
             let delta = Diff.diff prevScene scene
             let node' = CachedNode.applyDelta delta cachedRoot
             let dl = CachedNode.getDrawList node' ShapeCache.Shared
@@ -61,7 +63,8 @@ module Runtime =
         Seq.toList results
 
     /// Start a headless runtime with imperative control
-    let start (program: Program<'Model, 'Msg>) : HeadlessRuntime<'Model, 'Msg> =
+    /// Start a runtime with a host-provided text engine; `viewportW` is the wrapping width for text.
+    let startWith (te: ITextEngine) (viewportW: float32) (program: Program<'Model, 'Msg>) : HeadlessRuntime<'Model, 'Msg> =
         let (initModel, initCmd) = program.Init()
         let mutable model = initModel
         let mutable prevScene = Scene.Empty
@@ -87,7 +90,7 @@ module Runtime =
                 model <- m''
 
         let renderFrame () =
-            let scene = program.View model
+            let scene = Resolve.resolve te viewportW (program.View model)
             let delta = Diff.diff prevScene scene
             let node' = CachedNode.applyDelta delta cachedRoot
             let dl = CachedNode.getDrawList node' ShapeCache.Shared
@@ -105,3 +108,7 @@ module Runtime =
             GetModel    = fun () -> model
             LastBuffer  = fun () -> lastBuf
         }
+
+    /// Start with no text engine (Text nodes draw nothing); fine for shape-only programs and tests.
+    let start (program: Program<'Model, 'Msg>) : HeadlessRuntime<'Model, 'Msg> =
+        startWith TextEngine.approximate System.Single.MaxValue program

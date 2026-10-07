@@ -22,6 +22,10 @@
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>FSharp.Graphics.Demo</_Parameter1>
     </AssemblyAttribute>
+    <!-- src/FSharp.Graphics/FSharp.Graphics.fsproj -->
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>FSharp.Graphics.DesktopRunner</_Parameter1>
+    </AssemblyAttribute>    
   </ItemGroup>
 
   <ItemGroup>
@@ -52,8 +56,6 @@
     <!-- TEA runtime -->
     <Compile Include="Tea/Tea.fs" />
     <Compile Include="Tea/Runtime.fs" />
-
-    <Compile Include="Pipeline.fs" />
   </ItemGroup>
 
 </Project>

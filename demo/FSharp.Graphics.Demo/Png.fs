@@ -3,6 +3,9 @@
 /// Produces valid PNG files using zlib "stored" (non-compressed) blocks so
 /// that no Huffman/LZ77 implementation is required.  The output is larger
 /// than a compressed PNG but byte-for-byte identical in pixel data.
+
+
+/// TODO: obsolete and now in FSharp.Grapihs.Host.Png !!!!
 module FSharp.Graphics.Demo.Png
 
 // ─────────────────────────────────────────────────────────────────────────────

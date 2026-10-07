@@ -44,6 +44,9 @@ type internal CachedNode =
     | CachedReactive  of handler: (InputEvent -> bool) * child: CachedNode * dirty: bool ref
     | CachedAnimated  of transition: Transition * animState: AnimState * child: CachedNode * dirty: bool ref
     | CachedBlur      of sigma: float32 * child: CachedNode * dirty: bool ref
+    | CachedGlyphRun  of fontId: FontId * sizePx: float32 * color: Color * glyphs: GlyphPosition array
+    | CachedFilter    of matrix: ColorMatrix * child: CachedNode * dirty: bool ref
+    | CachedBlend     of blend: Blend * child: CachedNode * dirty: bool ref
     | CachedEmpty
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,9 +73,10 @@ module internal CachedNode =
         | Scene.Reactive(h, c)      -> CachedReactive(h, build c, ref true)
         | Scene.Animated(t, c)      -> CachedAnimated(t, AnimState(), build c, ref true)
         | Scene.Blur(sigma, c)      -> CachedBlur(sigma, build c, ref true)
-        // ColorFilter, BlendMode, Mask — pass through for now
-        | Scene.ColorFilter(_, c)   -> build c
-        | Scene.BlendMode(_, c)     -> build c
+        | Scene.GlyphRun(f, sz, c, gs, _) -> CachedGlyphRun(f, sz, c, gs)
+        | Scene.ColorFilter(m, c)   -> CachedFilter(m, build c, ref true)
+        | Scene.BlendMode(b, c)     -> CachedBlend(b, build c, ref true)
+        // Mask: not implemented by any backend yet - draws the child unmasked (see ARCHITECTURE.md)
         | Scene.Mask(_, c)          -> build c
 
     /// Apply a delta to update the cache tree
@@ -121,50 +125,54 @@ module internal CachedNode =
             | CachedReactive(h, c, _)         -> CachedReactive(h, singleChild c, ref true)
             | CachedAnimated(t, st, c, _)     -> CachedAnimated(t, st, singleChild c, ref true)
             | CachedBlur(sigma, c, _)         -> CachedBlur(sigma, singleChild c, ref true)
+            | CachedFilter(m, c, _)           -> CachedFilter(m, singleChild c, ref true)
+            | CachedBlend(b, c, _)            -> CachedBlend(b, singleChild c, ref true)
             | _                               -> node
 
     /// Generate draw list from cached tree
-    let rec getDrawList (node: CachedNode) (shapeCache: ShapeCache) : DrawList =
+    /// Append this subtree's commands to `out` (no intermediate list allocation).
+    let rec emit (node: CachedNode) (out: ResizeArray<DrawCommand>) : unit =
+        let layer p child =
+            out.Add(PushLayer p)
+            emit child out
+            out.Add PopLayer
         match node with
+        | CachedEmpty -> ()
         | CachedShape state ->
             match state.CachedDrawList with
-            | ValueSome dl when not state.Dirty -> dl
+            | ValueSome dl when not state.Dirty -> out.AddRange dl
             | _ ->
-                let dl = DrawList.fromShape state.Primitive
-                state.CachedDrawList <- ValueSome dl
+                let tmp = ResizeArray<DrawCommand>()
+                DrawList.emitShape tmp state.Primitive
+                state.CachedDrawList <- ValueSome (Seq.toList tmp)
                 state.Dirty <- false
-                dl
-
-        | CachedText(_, style, dirty) ->
-            // Text rendering placeholder — emit a colored rect at zero bounds
+                out.AddRange tmp
+        | CachedText(_, _, dirty) ->
+            // Unresolved text has no glyphs: run Resolve.resolve first (Pipeline does)
             dirty.Value <- false
-            [DrawRect(Rect.zero, CornerRadius.zero, Solid style.Color)]
-
-        | CachedImage(imageId, destRect, opacity) ->
-            [DrawImage(imageId, destRect, opacity)]
-
-        | CachedGroup(children, _, _)
-        | CachedStack(_, children, _) ->
-            children |> Array.toList |> List.collect (fun c -> getDrawList c shapeCache)
-
+        | CachedGlyphRun(fid, size, color, glyphs) ->
+            if glyphs.Length > 0 then out.Add(DrawTextBatch(fid, size, glyphs, color))
+        | CachedImage(id, r, op) -> out.Add(DrawImage(id, r, op))
+        | CachedGroup(children, _, _) | CachedStack(_, children, _) ->
+            for c in children do emit c out
         | CachedClip(region, child, _) ->
-            PushClip region :: getDrawList child shapeCache @ [PopClip]
+            out.Add(PushClip region)
+            emit child out
+            out.Add PopClip
+        | CachedPadding(_, child, _) | CachedReactive(_, child, _) | CachedAnimated(_, _, child, _) ->
+            emit child out
+        | CachedTransform(m, child, _) ->
+            out.Add(PushTransform m)
+            emit child out
+            out.Add PopTransform
+        | CachedOpacity(a, child, _) ->
+            if a >= 1.0f then emit child out else layer { LayerParams.none with Alpha = a } child
+        | CachedBlur(sigma, child, _) ->
+            if sigma <= 0.0f then emit child out else layer { LayerParams.none with BlurSigma = sigma } child
+        | CachedFilter(m, child, _) -> layer { LayerParams.none with Filter = m } child
+        | CachedBlend(b, child, _)  -> layer { LayerParams.none with Blend = b } child
 
-        | CachedPadding(_, child, _)
-        | CachedReactive(_, child, _) ->
-            getDrawList child shapeCache
-
-        | CachedAnimated(_, _, child, _) ->
-            getDrawList child shapeCache
-
-        | CachedTransform(matrix, child, _) ->
-            PushTransform matrix :: getDrawList child shapeCache @ [PopTransform]
-
-        | CachedOpacity(alpha, child, _) ->
-            SetOpacity alpha :: getDrawList child shapeCache @ [SetOpacity 1.0f]
-
-        | CachedBlur(_, child, _) ->
-            // Blur is a post-processing effect — pass through for now
-            getDrawList child shapeCache
-
-        | CachedEmpty -> []
+    let getDrawList (node: CachedNode) (_shapeCache: ShapeCache) : DrawList =
+        let out = ResizeArray<DrawCommand>()
+        emit node out
+        Seq.toList out

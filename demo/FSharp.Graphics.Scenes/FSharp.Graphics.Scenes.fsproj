@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Feature-test scenes shared by every host (PNG export, desktop window, future browser).
+       Pure Scene values: no host dependencies. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>FSharp.Graphics.Scenes</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Kit.fs" />
+    <Compile Include="Scenes.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/FSharp.Math/FSharp.Math.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Core/FSharp.Graphics.Core.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Scene/FSharp.Graphics.Scene.fsproj" />
+  </ItemGroup>
+</Project>

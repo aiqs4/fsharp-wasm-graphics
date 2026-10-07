@@ -15,7 +15,9 @@
   <ItemGroup>
     <Compile Include="Diff.fs" />
     <Compile Include="CachedNode.fs" />
+    <Compile Include="Protocol.fs" />
     <Compile Include="Encode.fs" />
+    <Compile Include="Pipeline.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../FSharp.Math/FSharp.Math.fsproj" />

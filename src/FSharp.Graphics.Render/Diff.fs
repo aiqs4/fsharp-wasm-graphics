@@ -41,8 +41,10 @@ module Diff =
     let private paintEq (a: Paint) (b: Paint) =
         match a, b with
         | Solid ca, Solid cb -> ca = cb
-        | LinearGradient(sa, aa), LinearGradient(sb, ab) -> sa = sb && aa = ab
-        | RadialGradient(sa, ca), RadialGradient(sb, cb) -> sa = sb && ca = cb
+        | LinearGradient(startA, endA, stopsA), LinearGradient(startB, endB, stopsB) -> 
+            startA = startB && endA = endB && stopsA = stopsB
+        | RadialGradient(centerA, radiusA, stopsA), RadialGradient(centerB, radiusB, stopsB) -> 
+            centerA = centerB && radiusA = radiusB && stopsA = stopsB
         | ImageFill(ia, oa), ImageFill(ib, ob) -> ia = ib && oa = ob
         | _ -> false
 

@@ -41,9 +41,10 @@ let scene004 () =
         Bounds  = Rect.create 50.0f 50.0f 300.0f 200.0f
         Radius  = CornerRadius.zero
         Fill    = LinearGradient(
+            Vec2.create 50.0f 50.0f, 
+            Vec2.create 50.0f 250.0f,
             [| { Offset = 0.0f; Color = Color.rgb 255uy 100uy 0uy }
-               { Offset = 1.0f; Color = Color.rgb 100uy 0uy 255uy } |],
-            90.0f)
+               { Offset = 1.0f; Color = Color.rgb 100uy 0uy 255uy } |])
         Stroke  = None
         Shadow  = None
     })
@@ -54,9 +55,10 @@ let scene005 () =
         Center  = Vec2.create 200.0f 150.0f
         Radius  = 100.0f
         Fill    = RadialGradient(
+            Vec2.create 50.0f 50.0f, 
+            100.0f,
             [| { Offset = 0.0f; Color = Color.rgb 255uy 255uy 100uy }
-               { Offset = 1.0f; Color = Color.rgb 255uy 50uy 50uy } |],
-            Vec2.create 200.0f 150.0f)
+               { Offset = 1.0f; Color = Color.rgb 255uy 50uy 50uy } |])
         Stroke  = None
         Shadow  = None
     })
@@ -151,7 +153,7 @@ let scene011 () =
         Text(
             "Hello, GlyphAura!",
             { FontId = FontId 1UL; SizePx = 22.0f; Color = Color.rgb 30uy 30uy 80uy
-              Weight = Bold; Align = Left; Wrap = false
+              Weight = Bold; Align = TextAlign.Left; Wrap = false
               Overflow = TextOverflow.Clip
               LetterSpacing = 0.0f; LineHeight = 1.2f }
         )
@@ -159,7 +161,7 @@ let scene011 () =
         Text(
             "OpenType shaping in F#",
             { FontId = FontId 1UL; SizePx = 14.0f; Color = Color.rgb 80uy 80uy 120uy
-              Weight = Regular; Align = Left; Wrap = false
+              Weight = Regular; Align = TextAlign.Left; Wrap = false
               Overflow = TextOverflow.Clip
               LetterSpacing = 0.0f; LineHeight = 1.2f }
         )
@@ -249,9 +251,10 @@ let scene018 () =
             Bounds = Rect.create 80.0f 80.0f 240.0f 140.0f
             Radius = CornerRadius.zero
             Fill   = LinearGradient(
+                Vec2.create 80.0f 80.0f, 
+                Vec2.create 80.0f 250.0f,
                 [| { Offset = 0.0f; Color = Color.rgb 255uy 100uy 0uy }
-                   { Offset = 1.0f; Color = Color.rgb 0uy 100uy 255uy } |],
-                0.0f)
+                   { Offset = 1.0f; Color = Color.rgb 0uy 100uy 255uy } |])
             Stroke = None; Shadow = None
         })
     )

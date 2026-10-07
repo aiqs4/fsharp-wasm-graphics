@@ -11,6 +11,8 @@
     <Compile Include="Animation.fs" />
     <Compile Include="Scene.fs" />
     <Compile Include="Layout.fs" />
+    <Compile Include="Resolve.fs" />
+    <Compile Include="Hit.fs" />
     <Compile Include="ActorBuilder.fs" />
     <Compile Include="Combinators.fs" />
   </ItemGroup>

@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/demo/">
     <Project Path="demo/FSharp.Graphics.Demo/FSharp.Graphics.Demo.fsproj" />
+    <Project Path="demo/FSharp.Graphics.DesktopRunner/FSharp.Graphics.DesktopRunner.fsproj" />
+    <Project Path="demo/FSharp.Graphics.Scenes/FSharp.Graphics.Scenes.fsproj" />
   </Folder>
   <Folder Name="/lib/">
     <Project Path="lib/GlyphAura/src/GlyphAura/GlyphAura.fsproj" />

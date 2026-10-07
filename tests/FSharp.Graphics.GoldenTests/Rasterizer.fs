@@ -73,42 +73,60 @@ type Framebuffer(width: int, height: int) =
 // ─────────────────────────────────────────────────────────────────────────────
 // Paint sampling
 // ─────────────────────────────────────────────────────────────────────────────
+let inline private sampleStops (stops: GradientStop array) (t: float32) =
+    if stops.Length = 0 then 
+        Color.Transparent
+    else
+        let tClamped = Scalar.clamp 0.0f 1.0f t
+        let mutable lo = stops.[0]
+        let mutable hi = stops.[stops.Length - 1]
+        
+        for i = 0 to stops.Length - 1 do
+            let s = stops.[i]
+            if s.Offset <= tClamped && s.Offset >= lo.Offset then lo <- s
+            if s.Offset >= tClamped && s.Offset <= hi.Offset then hi <- s
+            
+        if lo.Offset >= hi.Offset then 
+            lo.Color
+        else 
+            Color.lerpLinear lo.Color hi.Color ((tClamped - lo.Offset) / (hi.Offset - lo.Offset))
 
 let private samplePaint (paint: Paint) (p: Vec2) (bounds: Rect) : Color =
     match paint with
     | Solid c -> c
-    | LinearGradient(stops, angleDeg) ->
-        if stops.Length = 0 then Color.Transparent
+    
+    | LinearGradient(startPoint, endPoint, stops) ->
+        // Vektor von Start zu Ende
+        let v = Vec2.create (endPoint.X - startPoint.X) (endPoint.Y - startPoint.Y)
+        // Quadratische Länge des Richtungsvektors
+        let lenSq = v.X * v.X + v.Y * v.Y
+        
+        if lenSq < 0.0001f then 
+            if stops.Length > 0 then stops.[0].Color else Color.Transparent
         else
-            let rad = Scalar.toRadians angleDeg
-            let dir = Vec2.create (Scalar.cos rad) (Scalar.sin rad)
-            let cx = bounds.X + bounds.W * 0.5f
-            let cy = bounds.Y + bounds.H * 0.5f
-            let rel = Vec2.create (p.X - cx) (p.Y - cy)
-            let halfDiag = Vec2.len (Vec2.create (bounds.W * 0.5f) (bounds.H * 0.5f))
-            let proj = Vec2.dot rel dir
-            let t = Scalar.clamp 0.0f 1.0f (proj / (halfDiag * 2.0f) + 0.5f)
-            let mutable lo = stops.[0]
-            let mutable hi = stops.[stops.Length - 1]
-            for s in stops do
-                if s.Offset <= t && s.Offset >= lo.Offset then lo <- s
-                if s.Offset >= t && s.Offset <= hi.Offset then hi <- s
-            if lo.Offset >= hi.Offset then lo.Color
-            else Color.lerpLinear lo.Color hi.Color ((t - lo.Offset) / (hi.Offset - lo.Offset))
-    | RadialGradient(stops, center) ->
-        if stops.Length = 0 then Color.Transparent
+            // Vektor vom Startpunkt zum aktuellen Pixel p
+            let d = Vec2.create (p.X - startPoint.X) (p.Y - startPoint.Y)
+            // Skalarprodukt für die Projektion (Dot Product)
+            let dot = d.X * v.X + d.Y * v.Y
+            // t ist der relative Fortschritt auf der Linie (0.0 bis 1.0)
+            let t = dot / lenSq
+            sampleStops stops t
+            
+    | RadialGradient(center, radius, stops) ->
+        if radius < 0.0001f then
+            if stops.Length > 0 then stops.[stops.Length - 1].Color else Color.Transparent
         else
-            let halfR = Scalar.max' (bounds.W * 0.5f) (bounds.H * 0.5f)
-            let dist = Vec2.distance p center
-            let t = Scalar.clamp 0.0f 1.0f (dist / (halfR + 0.001f))
-            let mutable lo = stops.[0]
-            let mutable hi = stops.[stops.Length - 1]
-            for s in stops do
-                if s.Offset <= t && s.Offset >= lo.Offset then lo <- s
-                if s.Offset >= t && s.Offset <= hi.Offset then hi <- s
-            if lo.Offset >= hi.Offset then lo.Color
-            else Color.lerpLinear lo.Color hi.Color ((t - lo.Offset) / (hi.Offset - lo.Offset))
-    | ImageFill _ -> Color.Gray  // Placeholder
+            // Tatsächliche Distanz vom Pixel zum Zentrum berechnen
+            let dx = p.X - center.X
+            let dy = p.Y - center.Y
+            let dist = Scalar.sqrt (dx * dx + dy * dy)
+            // t ist das Verhältnis von Distanz zu Radius
+            let t = dist / radius
+            sampleStops stops t
+            
+    | ImageFill _ -> 
+        Color.Gray  // Placeholder
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shadow rendering (drop + inner)

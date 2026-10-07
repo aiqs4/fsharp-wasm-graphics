@@ -43,20 +43,14 @@ module Insets =
     let xy x y = { Top = y; Right = x; Bottom = y; Left = x }
     let create t r b l = { Top = t; Right = r; Bottom = b; Left = l }
 
-/// Blend modes for compositing
-type Blend =
-    | Normal | Multiply | Screen | Overlay
-    | Darken | Lighten | ColorDodge | ColorBurn
-    | HardLight | SoftLight | Difference | Exclusion
-
-/// Color matrix for filters (4×5 RGBA matrix)
-type ColorMatrix = float32 array
-
 /// The immutable Scene tree
 type Scene =
     // Leaf primitives
     | Shape     of PrimitiveShape
     | Text      of text: string * style: TextStyle
+    /// Laid-out text: positioned glyphs, produced by Resolve.resolve from a Text node.
+    /// Glyph (X,Y) are baseline pen positions relative to the local origin.
+    | GlyphRun  of fontId: FontId * sizePx: float32 * color: Color * glyphs: GlyphPosition array * bounds: Rect
     | Image     of ImageId * Rect * opacity: float32
     | Empty
 

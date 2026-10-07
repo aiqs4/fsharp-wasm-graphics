@@ -19,5 +19,7 @@ module Shadow =
         { Offset = offset; Blur = blur; Spread = 0.0f; Color = color; Inner = true }
     let dropSpread offset blur spread color =
         { Offset = offset; Blur = blur; Spread = spread; Color = color; Inner = false }
-    let simple blur color =
-        { Offset = Vec2.zero; Blur = blur; Spread = 0.0f; Color = color; Inner = false }
+    let simple ox oy blur color =
+        { Offset = Vec2.create ox oy; Blur = blur; Spread = 0.0f; Color = color; Inner = false }
+    
+    let Simple = simple
