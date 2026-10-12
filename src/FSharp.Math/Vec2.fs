@@ -2,7 +2,32 @@ namespace FSharp.Math
 
 /// 2D vector with float32 components
 [<Struct>]
-type Vec2 = { X: float32; Y: float32 }
+type Vec2 =
+    { X: float32; Y: float32 }
+
+    static member inline Create(x: float32, y: float32) = { X = x; Y = y }
+    static member inline Zero  = { X = 0.0f; Y = 0.0f }
+    static member inline One   = { X = 1.0f; Y = 1.0f }
+
+    static member inline (+) (a: Vec2, b: Vec2) = { X = a.X + b.X; Y = a.Y + b.Y }
+    static member inline (-) (a: Vec2, b: Vec2) = { X = a.X - b.X; Y = a.Y - b.Y }
+    static member inline (*) (a: Vec2, s: float32) = { X = a.X * s;   Y = a.Y * s   }
+    static member inline (*) (s: float32, a: Vec2) = { X = a.X * s;   Y = a.Y * s   }
+    static member inline (/) (a: Vec2, s: float32) = { X = a.X / s;   Y = a.Y / s   }
+
+    member inline v.LengthSquared = v.X * v.X + v.Y * v.Y
+    member inline v.Length = sqrt v.LengthSquared
+
+    member inline v.Normalize() =
+        let len = v.Length
+        if len > 1e-7f then { X = v.X / len; Y = v.Y / len }
+        else Vec2.Zero
+
+    static member inline Dot   (a: Vec2, b: Vec2) = a.X * b.X + a.Y * b.Y
+    static member inline Lerp  (a: Vec2, b: Vec2, t: float32) = a + (b - a) * t
+    static member inline Abs   (v: Vec2) = { X = abs v.X; Y = abs v.Y }
+    static member inline Max   (a: Vec2, b: Vec2) = { X = max a.X b.X; Y = max a.Y b.Y }
+    static member inline Min   (a: Vec2, b: Vec2) = { X = min a.X b.X; Y = min a.Y b.Y }
 
 module Vec2 =
     let inline create x y : Vec2 = { X = x; Y = y }

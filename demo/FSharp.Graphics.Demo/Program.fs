@@ -1,128 +1,76 @@
-/// Demo entry-point: builds a static scene with several shapes and text, then
-/// rasterizes it to a PNG file using the pure-F# software renderer.
-///
-/// The same scene description also exercises the layout engine, diff
-/// algorithm, and command-buffer encoder so the entire Phase 2–4 pipeline
-/// is exercised in a single run.
+/// Usage:  dotnet run --project demo/FSharp.Graphics.Demo -- [--out DIR] [--scene ID]... [--size WxH] [--time MS] [--list]
+/// Writes one PNG per scene plus index.html. Exit code 1 if any command stream is malformed.
 module FSharp.Graphics.Demo.Program
 
-open FSharp.Graphics
-open FSharp.Graphics.Primitives
-open FSharp.Graphics.Primitives.Shapes
-open FSharp.Graphics.Scene
-open FSharp.Graphics.Layout
+open System
+open System.IO
+open System.Diagnostics
+open FSharp.Math
+open FSharp.Graphics.Core
 open FSharp.Graphics.Render
-open FSharp.Graphics.Tea
-open FSharp.Graphics.Runtime
-open FSharp.Graphics.Shared.DemoScene
-open GlyphAuro
+open FSharp.Graphics.Host
+open FSharp.Graphics.Scenes
+open FSharp.Graphics.Scenes.Kit
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Layout + encoder exercise
-// ─────────────────────────────────────────────────────────────────────────────
+type Options = { Out: string; Scenes: string list; W: int; H: int; Time: float32; List: bool }
 
-let exercisePipeline (scene: Scene) =
-    let viewport = Rect.Create(0.0f, 0.0f, 480.0f, 320.0f)
-
-    // 1. Layout pass
-    let layoutResult = LayoutEngine.layoutScene scene viewport
-    printfn "Layout done – root bounds: (%.0f,%.0f) %.0fx%.0f"
-            layoutResult.Bounds.X layoutResult.Bounds.Y
-            layoutResult.Bounds.W layoutResult.Bounds.H
-
-    // 2. Diff (first frame – full replace)
-    let delta1 = Diff.diffOpt Option.None scene
-    printfn "Frame-1 delta: %A" (delta1.GetType().Name)
-
-    // 3. Diff with identical scene (should be NoChange)
-    let delta2 = Diff.diffOpt (Some scene) scene
-    printfn "Frame-2 delta (same scene): %A" delta2
-
-    // 4. Encode
-    let shapeCache = ShapeCache(64)
-    let cachedTree = Render.Internal.CachedNode.build scene
-    let drawList   = Render.Internal.CachedNode.getDrawList cachedTree shapeCache
-    let (buf, len) = Encode.encode drawList
-    printfn "Encoded %d commands into %d bytes  (cache entries: %d)"
-            drawList.Length len shapeCache.Count
-
-    drawList
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TEA round-trip demo (counter)
-// ─────────────────────────────────────────────────────────────────────────────
-
-type CounterMsg = Increment | Decrement
-
-let counterProgram : Program<int, CounterMsg> =
-    { Init   = fun () -> 0, Cmd.none
-      Update = fun model msg ->
-                   match msg with
-                   | Increment -> model + 1, Cmd.none
-                   | Decrement -> model - 1, Cmd.none
-      View   = fun count ->
-                   let label =
-                       Text {
-                           Text  = sprintf "Count: %d" count
-                           Font  = FontFace.SansSerif 20.0f
-                           Color = Color.Black
-                           Align = TextAlign.Center
-                           MaxWidth  = ValueSome 200.0f
-                           MaxHeight = ValueNone
-                           LetterSpacing = 0.0f
-                           LineSpacing   = 1.0f }
-                   Padding(Insets.All 20.0f, label) }
-
-let runTeaDemo () =
-    let frames = RuntimeHelpers.runHeadless counterProgram
-                     [ [Increment; Increment]
-                       [Increment]
-                       [Decrement] ]
-    printfn "TEA demo: %d frames rendered, frame sizes: %A"
-            frames.Length (frames |> List.map (fun b -> b.Length))
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PNG rendering
-// ─────────────────────────────────────────────────────────────────────────────
-
-let renderToPng (scene: Scene) (outputPath: string) =
-    let w, h = 480, 320
-    let canvas = Rasterizer.Canvas(w, h)
-    canvas.Clear Color.White
-
-    // Rasterize the scene using the software renderer.
-    Rasterizer.rasterizeScene canvas Matrix3x2.Identity scene
-
-    // Encode and write the PNG.
-    let png = Png.encode w h canvas.Pixels
-    System.IO.File.WriteAllBytes(outputPath, png)
-    printfn "PNG written to: %s  (%d bytes)" outputPath png.Length
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Entry point
-// ─────────────────────────────────────────────────────────────────────────────
+let parse (argv: string[]) =
+    let rec go (o: Options) (args: string list) =
+        match args with
+        | [] -> o
+        | "--out" :: d :: t   -> go { o with Out = d } t
+        | "--scene" :: s :: t -> go { o with Scenes = o.Scenes @ [ s ] } t
+        | "--size" :: s :: t  ->
+            let p = s.Split 'x'
+            go { o with W = int p.[0]; H = int p.[1] } t
+        | "--time" :: m :: t  -> go { o with Time = float32 m } t
+        | "--list" :: t       -> go { o with List = true } t
+        | x :: _ -> failwithf "unknown argument '%s'" x
+    go { Out = "out"; Scenes = []; W = 800; H = 600; Time = 1234.0f; List = false } (List.ofArray argv)
 
 [<EntryPoint>]
-let main _ =
-    printfn "=== FSharp.Graphics Demo ==="
-    printfn ""
-
-    let scene = buildScene ()
-
-    // Exercise the full Phase 2–4 pipeline
-    printfn "--- Pipeline exercise ---"
-    let _ = exercisePipeline scene
-    printfn ""
-
-    // TEA round-trip
-    printfn "--- TEA runtime ---"
-    runTeaDemo ()
-    printfn ""
-
-    // Render to PNG
-    printfn "--- PNG rendering ---"
-    let outPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "demo_output.png")
-    renderToPng scene outPath
-    printfn ""
-    printfn "=== Done ==="
-    0
+let main argv =
+    let o = parse argv
+    if o.List then
+        for d in Scenes.all do printfn "%-12s %s" d.Id d.Covers
+        0
+    else
+    let fonts = FontLocator.loadDefault ()
+    let text = GlyphAuraTextEngine fonts
+    let selected =
+        if o.Scenes.IsEmpty then Scenes.all
+        else Scenes.all |> List.filter (fun d -> List.contains d.Id o.Scenes)
+    Directory.CreateDirectory o.Out |> ignore
+    let bgWhite = Color.rgba 255uy 255uy 255uy 255uy
+    let mutable failures = 0
+    let rows = ResizeArray<string>()
+    printfn "%-12s %8s %6s %9s %9s" "scene" "bytes" "cmds" "encode" "raster"
+    for d in selected do
+        let ctx = { Time = o.Time; Size = Vec2.create (float32 o.W) (float32 o.H); Font = FontId 0UL }
+        let stage = Stage(text, float32 o.W, float32 o.H)
+        let sw = Stopwatch.StartNew()
+        let struct (buf, len) = stage.Frame(d.Build ctx)
+        let tEncode = sw.Elapsed.TotalMilliseconds
+        let renderer = SoftwareRenderer(o.W, o.H, fonts)
+        sw.Restart()
+        match CommandReader.run renderer buf len with
+        | Decoded n ->
+            let tRaster = sw.Elapsed.TotalMilliseconds
+            let png = Png.encode o.W o.H (renderer.ToRgba8 bgWhite)
+            let file = d.Id + ".png"
+            File.WriteAllBytes(Path.Combine(o.Out, file), png)
+            printfn "%-12s %8d %6d %7.1fms %7.0fms" d.Id len n tEncode tRaster
+            rows.Add(sprintf "<figure><a href=\"%s\"><img src=\"%s\" loading=\"lazy\"></a><figcaption><b>%s</b><br><small>%s</small></figcaption></figure>" file file d.Title d.Covers)
+        | Malformed(off, msg) ->
+            failures <- failures + 1
+            eprintfn "%-12s MALFORMED command stream at byte %d: %s" d.Id off msg
+    let html =
+        "<!doctype html><meta charset=utf-8><title>FSharp.Graphics scenes</title>"
+        + "<style>body{font:14px system-ui;background:#0b1220;color:#e2e8f0;margin:24px}"
+        + "main{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:18px}"
+        + "figure{margin:0;background:#111a2e;padding:10px;border-radius:10px}img{width:100%;border-radius:6px;display:block}"
+        + "figcaption{margin-top:8px}small{color:#94a3b8}</style><h1>FSharp.Graphics scenes</h1><main>"
+        + String.Join("", rows) + "</main>"
+    File.WriteAllText(Path.Combine(o.Out, "index.html"), html)
+    printfn "\n%d scene(s) -> %s%s" rows.Count (Path.GetFullPath o.Out) (if failures > 0 then sprintf "   [%d FAILED]" failures else "")
+    if failures > 0 then 1 else 0

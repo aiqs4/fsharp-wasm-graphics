@@ -28,8 +28,7 @@ type GlyphAuraTextEngine(fonts: FontStore) =
                 if y >= 0.0f && y < h then ValueSome(struct (0.0f, w)) else ValueNone
             member _.BoundingBox = { Left = 0.0f; Top = 0.0f; Right = w; Bottom = h } }
 
-    interface ITextEngine with
-        member _.Layout(text, style, maxWidth) =
+    member private this.LayoutParagraph(text: string, style: TextStyle, maxWidth: float32) : TextLayout =
             let empty = { Glyphs = [||]; Width = 0.0f; Height = style.SizePx * style.LineHeight }
             match fonts.TryBytes style.FontId, fonts.TryFont style.FontId with
             | Some bytes, Some ttf when text.Length > 0 ->
@@ -90,3 +89,19 @@ type GlyphAuraTextEngine(fonts: FontStore) =
                               AdvanceX = adv.[i] })
                     { Glyphs = glyphs; Width = width; Height = float32 (max 1 lines) * lh }
             | _ -> empty
+
+    interface ITextEngine with
+        /// Splits on '\n' (hard line breaks) and stacks the paragraphs.
+        member this.Layout(text, style, maxWidth) =
+            if text.IndexOf '\n' < 0 then this.LayoutParagraph(text, style, maxWidth)
+            else
+                let lh = style.SizePx * style.LineHeight
+                let mutable y = 0.0f
+                let mutable w = 0.0f
+                let glyphs = ResizeArray<GlyphPosition>()
+                for para in text.Split '\n' do
+                    let l = this.LayoutParagraph(para, style, maxWidth)
+                    for g in l.Glyphs do glyphs.Add { g with Y = g.Y + y }
+                    w <- max w l.Width
+                    y <- y + (if para.Length = 0 then lh else l.Height)
+                { Glyphs = glyphs.ToArray(); Width = w; Height = y }

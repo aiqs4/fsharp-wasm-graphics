@@ -36,10 +36,10 @@ let shapes (ctx: Ctx) =
         Group (row1 |> List.mapi (fun i s -> at (24.0f + float32 i * 126.0f) 90.0f s))
         Group (row2 |> List.mapi (fun i s -> at (24.0f + float32 i * 126.0f) 200.0f s))
         at 24.0f 330.0f (Group lines)
-        at 230.0f 336.0f (Group dots)
-        at 230.0f 380.0f (Group hair)
+        at 230.0f 352.0f (Group dots)
+        at 230.0f 392.0f (Group hair)
         caption ctx 230.0f 330.0f "radius 0.5 … 6 (AA of tiny discs)"
-        caption ctx 230.0f 424.0f "1px lines at .0 and .5 offsets"
+        caption ctx 230.0f 436.0f "1px lines at .0 and .5 offsets"
         at 24.0f 480.0f (label ctx 12.0f muted "Rect/RoundedRect SDF are exact; the old version drew half-transparent fills and edge-less strokes.")
     ]
 
@@ -83,14 +83,14 @@ let gradients (ctx: Ctx) =
     let sw (mk: Rect -> Paint) (r: Rect) = Shape (Shapes.roundedRect r (CornerRadius.all 12.0f) (mk r))
     let checker (r: Rect) =
         Group [ for i in 0 .. 16 do 
-                    for j in 0 .. 11 do
+                    for j in 0 .. 10 do
                         if (i + j) % 2 = 0 then 
                             yield box (r.X + float32 i * 10.0f) (r.Y + float32 j * 10.0f) 10.0f 10.0f (hex 0x475569) ]
     Group [
         page ctx
         title ctx "Gradients" "linear H/V/angled · radial · multi-stop · alpha stops · gradient strokes · under rotation"
-        cell 0 (sw (fun r -> Paint.linearH (two blue pink)))
-        cell 1 (sw (fun r -> Paint.linearV (two amber red)))
+        cell 0 (sw (fun r -> Paint.linearH r (two blue pink)))
+        cell 1 (sw (fun r -> Paint.linearV r (two amber red)))
         cell 2 (sw (fun r -> Paint.linearAngle r 45.0f (two green cyan)))
         cell 3 (sw (fun r -> Paint.linearAngle r 135.0f (two violet amber)))
         cell 4 (sw (fun r -> Paint.radialIn r (two ink blue)))
@@ -180,10 +180,10 @@ let layout (ctx: Ctx) =
         caption ctx 24.0f 190.0f "vstack gap 8"
         at 180.0f 90.0f (Scene.hstack 10.0f heights)
         caption ctx 180.0f 190.0f "hstack · Start"
-        at 360.0f 90.0f (hstackA 10.0f CrossAxisAlignment.Center heights)
-        caption ctx 360.0f 190.0f "· Center"
-        at 540.0f 90.0f (hstackA 10.0f CrossAxisAlignment.End_ heights)
-        caption ctx 540.0f 190.0f "· End"
+        at 380.0f 90.0f (hstackA 10.0f CrossAxisAlignment.Center heights)
+        caption ctx 380.0f 190.0f "hstack · Center"
+        at 580.0f 90.0f (hstackA 10.0f CrossAxisAlignment.End_ heights)
+        caption ctx 580.0f 190.0f "hstack · End"
         // padding: each box is wrapped in 12px padding, so neighbours sit 24px apart
         at 24.0f 230.0f (Scene.hstack 0.0f [ for c in [ blue; green; amber; pink ] -> Scene.padAll 12.0f (b 60.0f 40.0f c) ])
         caption ctx 24.0f 310.0f "padAll 12 around each box → 24px between them"
@@ -215,7 +215,11 @@ let clipping (ctx: Ctx) =
         // nested clips: visible area is the intersection
         at 240.0f 100.0f (Scene.Clip(rc 0.0f 0.0f 130.0f 90.0f, Scene.Clip(rc 50.0f 30.0f 130.0f 90.0f, Group [ box -20.0f -20.0f 300.0f 200.0f (alpha 0.9f green) ])))
         // clip is rotated together with the content (clip lives in local space)
-        at 520.0f 150.0f (Scene.rotate 30.0f Vec2.zero (Scene.Clip(rc -60.0f -40.0f 120.0f 80.0f, Group [ box -100.0f -100.0f 200.0f 200.0f (Paint.linearH (rc -60.0f 0.0f 120.0f 1.0f) (stops [ 0.0f, amber; 1.0f, red ]) |> fun p -> Shape (Shapes.rect (rc -100.0f -100.0f 200.0f 200.0f) p)) ])))
+        at 520.0f 150.0f (
+            let area = rc -100.0f -100.0f 200.0f 200.0f
+            Scene.rotate 30.0f Vec2.zero
+                (Scene.Clip(rc -60.0f -40.0f 120.0f 80.0f,
+                            Shape (Shapes.rect area (Paint.linearH (rc -60.0f 0.0f 120.0f 1.0f) (stops [ 0.0f, amber; 1.0f, red ]))))))
         caption ctx 40.0f 205.0f "plain clip"
         caption ctx 240.0f 205.0f "intersection of two clips"
         caption ctx 460.0f 205.0f "rotated clip — edge stays anti-aliased"
@@ -245,9 +249,9 @@ let layers (ctx: Ctx) =
         at 24.0f 90.0f (pair (alpha 0.5f blue) (alpha 0.5f red))
         at 140.0f 90.0f (Scene.opacity 0.5f (pair blue red))
         at 256.0f 90.0f (Scene.opacity 0.5f (Scene.opacity 0.5f (pair blue red)))
-        caption ctx 24.0f 175.0f "per-shape alpha (overlap darkens)"
-        caption ctx 140.0f 175.0f "group opacity 0.5 (flat)"
-        caption ctx 256.0f 175.0f "nested 0.5 × 0.5"
+        caption ctx 24.0f 175.0f "per-shape alpha"
+        caption ctx 140.0f 175.0f "group 0.5"
+        caption ctx 256.0f 175.0f "nested ½ × ½"
         at 420.0f 90.0f (Group [ for i, s in [ 0.0f; 2.0f; 5.0f; 10.0f ] |> List.indexed -> at (float32 i * 85.0f) 0.0f (Scene.blur s (Group [ rbox 5.0f 15.0f 60.0f 50.0f 10.0f green; dot 35.0f 40.0f 12.0f ink ])) ])
         caption ctx 420.0f 175.0f "blur σ = 0 · 2 · 5 · 10"
         Group [ for i, (n, m) in [ "Multiply", Multiply; "Screen", Screen; "Overlay", Overlay; "Difference", Difference; "Exclusion", Exclusion; "Darken", Darken; "Lighten", Lighten ] |> List.indexed ->
@@ -271,16 +275,16 @@ let text (ctx: Ctx) =
         title ctx "Text" "sizes · colour · alignment · wrapping · letter spacing · line height · unicode"
         Group [ for i, s in [ 10.0f; 14.0f; 18.0f; 24.0f; 32.0f; 44.0f ] |> List.indexed ->
                     at 24.0f (80.0f + [| 0.0f; 18.0f; 40.0f; 68.0f; 100.0f; 140.0f |].[i]) (label ctx s ink (sprintf "Sphinx of black quartz %.0fpx" s)) ]
-        at 470.0f 84.0f (label ctx 22.0f blue "Coloured")
-        at 470.0f 114.0f (label ctx 22.0f pink "text")
-        at 470.0f 144.0f (label ctx 22.0f green "runs")
-        at 470.0f 190.0f (Scene.Text("Letter spacing 3px", { TextStyle.defaultStyle ctx.Font with SizePx = 16.0f; Color = ink; LetterSpacing = 3.0f; Wrap = false }))
+        at 600.0f 84.0f (label ctx 22.0f blue "Coloured")
+        at 600.0f 114.0f (label ctx 22.0f pink "text")
+        at 600.0f 144.0f (label ctx 22.0f green "runs")
+        at 24.0f 282.0f (Scene.Text("Letter spacing 3px", { TextStyle.defaultStyle ctx.Font with SizePx = 16.0f; Color = ink; LetterSpacing = 3.0f; Wrap = false }))
         col 24.0f TextAlign.Left "LEFT"
         col 274.0f TextAlign.Center "CENTER"
         col 524.0f TextAlign.Right "RIGHT"
         at 24.0f 470.0f (label ctx 18.0f ink "Ünïcödé · ÄÖÜ ß € · → ← ↑ ↓ · ✓ ✗ · ½ ¼ · αβγ ΔΩ")
         at 24.0f 505.0f (Group [ for i, lh in [ 1.0f; 1.4f; 1.8f ] |> List.indexed ->
-                                     at (float32 i * 250.0f) 0.0f (Scene.Clip(rc 0.0f 0.0f 220.0f 80.0f, Scene.Text("Line height " + string lh + " wraps\nonto several lines of text", { TextStyle.defaultStyle ctx.Font with SizePx = 13.0f; Color = muted; LineHeight = lh; Wrap = true }))) ])
+                                     at (float32 i * 250.0f) 0.0f (Scene.Clip(rc 0.0f 0.0f 220.0f 80.0f, Scene.Text("Line height " + string lh + ": a longer sentence that wraps onto several lines of text", { TextStyle.defaultStyle ctx.Font with SizePx = 13.0f; Color = muted; LineHeight = lh; Wrap = true }))) ])
     ]
 
 // ── 10. animation (pure function of time) ──────────────────────────────────
@@ -361,7 +365,7 @@ let interaction (ctx: Ctx) =
         rbox 380.0f 250.0f 320.0f 200.0f 14.0f panel
         at 400.0f 262.0f (label ctx 12.0f muted "drag the knob (stays captured outside the panel)")
         knob
-        at 40.0f 300.0f (label ctx 12.0f muted "Handlers are matched by tree path, so closures rebuilt every frame keep their hover state.")
+        at 40.0f 480.0f (label ctx 12.0f muted "Handlers are matched by tree path, so closures rebuilt every frame keep their hover state.")
     ]
 
 // ── 12. dashboard (everything together) ────────────────────────────────────

@@ -1,32 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
+  <!-- Native window (Silk.NET) + GPU canvas (Skia, optional backend).
+       The window layer is deliberately thin: scenes, layout, diff, protocol and the software
+       backend all live in the libraries, so this host can be replaced without touching them. -->
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>FSharp.Graphics.DesktopRunner</RootNamespace>
   </PropertyGroup>
-
   <ItemGroup>
-    <Compile Include="OpcodeDecoder.fs" />
-    <Compile Include="../FSharp.Graphics.Demo/DemoScene.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="SkiaSharp" Version="2.88.8" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="2.88.8" />
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="2.88.8" />
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="2.88.8" />
     <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
-    <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
+    <PackageReference Include="Silk.NET.Input" Version="2.22.0" />
   </ItemGroup>
-
-  <!-- Replace these paths with the actual relative paths to your core F# graphics projects -->
   <ItemGroup>
-    <ProjectReference Include="../../src/FSharp.Graphics/FSharp.Graphics.fsproj" />
-    <!-- <ProjectReference Include="../FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" /> -->
-    <ProjectReference Include="../../src/FSharp.Math/FSharp.Math.fsproj" />
-    <!-- <ProjectReference Include="../FSharp.Graphics.Demo/FSharp.Graphics.Demo.fsproj" /> -->
+    <ProjectReference Include="../FSharp.Graphics.Scenes/FSharp.Graphics.Scenes.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Host/FSharp.Graphics.Host.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Host.Skia/FSharp.Graphics.Host.Skia.fsproj" />
   </ItemGroup>
-
 </Project>

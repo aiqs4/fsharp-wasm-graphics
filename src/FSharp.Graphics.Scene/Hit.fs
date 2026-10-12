@@ -76,7 +76,8 @@ module Hit =
                 for t in hover do if not (has now t) then t.Handler (PointerLeave p) |> ignore
                 for t in now   do if not (has hover t) then t.Handler (PointerEnter p) |> ignore
                 hover <- now
-                bubble now evt
+                // implicit capture: while pressed, the press target keeps receiving moves (drags)
+                bubble (if pressed.Length > 0 then pressed else now) evt
             | PointerDown(p, _) ->
                 pressed <- pick scene p
                 bubble pressed evt

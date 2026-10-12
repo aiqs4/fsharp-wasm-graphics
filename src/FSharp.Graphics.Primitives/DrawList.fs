@@ -49,27 +49,27 @@ module DrawList =
     let empty: DrawList = []
     let inline concat (a: DrawList) (b: DrawList) : DrawList = a @ b
 
-    /// Append the commands for one primitive (shadow -> fill -> stroke) to `out`.
+    /// Append the commands for one primitive to `out`.
+    /// Order: drop shadow -> fill -> inner shadow -> stroke (inner shadows must sit ON the fill,
+    /// otherwise the fill hides them).
     let emitShape (out: ResizeArray<DrawCommand>) (shape: PrimitiveShape) : unit =
         let sdf = Shapes.toSdf shape
-        let opt f o = match o with Some x -> out.Add(f x) | None -> ()
+        let emit (fill: DrawCommand) (stroke: Stroke option) (shadow: Shadow option) =
+            match shadow with
+            | Some sh when not sh.Inner -> out.Add(DrawShadow(sdf, sh))
+            | _ -> ()
+            out.Add fill
+            match shadow with
+            | Some sh when sh.Inner -> out.Add(DrawShadow(sdf, sh))
+            | _ -> ()
+            match stroke with
+            | Some st -> out.Add(DrawStroke(sdf, st))
+            | None -> ()
         match shape with
-        | Rectangle r ->
-            opt (fun s -> DrawShadow(sdf, s)) r.Shadow
-            out.Add(DrawRect(r.Bounds, r.Radius, r.Fill))
-            opt (fun s -> DrawStroke(sdf, s)) r.Stroke
-        | Circle c ->
-            opt (fun s -> DrawShadow(sdf, s)) c.Shadow
-            out.Add(DrawCircle(c.Center, c.Radius, c.Fill))
-            opt (fun s -> DrawStroke(sdf, s)) c.Stroke
-        | Ellipse e ->
-            opt (fun s -> DrawShadow(sdf, s)) e.Shadow
-            out.Add(DrawEllipse(e.Center, e.RadiusX, e.RadiusY, e.Fill))
-            opt (fun s -> DrawStroke(sdf, s)) e.Stroke
-        | Path (s, f, st, sh) ->
-            opt (fun x -> DrawShadow(s, x)) sh
-            out.Add(DrawPath(s, f))
-            opt (fun x -> DrawStroke(s, x)) st
+        | Rectangle r -> emit (DrawRect(r.Bounds, r.Radius, r.Fill)) r.Stroke r.Shadow
+        | Circle c    -> emit (DrawCircle(c.Center, c.Radius, c.Fill)) c.Stroke c.Shadow
+        | Ellipse e   -> emit (DrawEllipse(e.Center, e.RadiusX, e.RadiusY, e.Fill)) e.Stroke e.Shadow
+        | Path (s, f, st, sh) -> emit (DrawPath(s, f)) st sh
 
     /// Build draw list from a primitive shape
     let fromShape (shape: PrimitiveShape) : DrawList =

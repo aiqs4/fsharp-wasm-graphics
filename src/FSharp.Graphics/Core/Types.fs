@@ -2,9 +2,16 @@
 /// All types are immutable structs; float32 is used throughout for GPU compatibility.
 namespace FSharp.Graphics
 
+// open FSharp.Math
+
+// TODO: this project is not for C# so any OOP style code shouldn't be applied
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Vec2
 // ─────────────────────────────────────────────────────────────────────────────
+
+// IMPORTANT: Vec2 Shifted to FSharp.Math. We have to reconsider all Math and Types where to go - NOT yet fullly done
+
 
 /// Immutable 2-D vector with single-precision components.
 [<Struct>]

@@ -58,4 +58,8 @@
     <Compile Include="Tea/Runtime.fs" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <ProjectReference Include="../src/FSharp.Math/FSharp.Math.fsproj" />
+  </ItemGroup>
 </Project>
