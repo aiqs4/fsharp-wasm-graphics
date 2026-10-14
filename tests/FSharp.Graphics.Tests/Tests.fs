@@ -536,6 +536,66 @@ let testTea () =
     )
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 10. Animation / Easing (M5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+let testAnimation () =
+    let eps = 1e-4f
+
+    testCase "Easing.Linear: t=0 → 0, t=1 → 1, t=0.5 → 0.5" (fun () ->
+        assertClose (Easing.evaluate Linear 0.0f) 0.0f eps "t=0"
+        assertClose (Easing.evaluate Linear 1.0f) 1.0f eps "t=1"
+        assertClose (Easing.evaluate Linear 0.5f) 0.5f eps "t=0.5"
+    )
+
+    testCase "Easing.EaseIn: t=0 → 0, t=1 → 1, t=0.5 < 0.5 (slow start)" (fun () ->
+        assertClose (Easing.evaluate EaseIn 0.0f) 0.0f eps "t=0"
+        assertClose (Easing.evaluate EaseIn 1.0f) 1.0f eps "t=1"
+        assert' (Easing.evaluate EaseIn 0.5f < 0.5f) "EaseIn at 0.5 < 0.5"
+    )
+
+    testCase "Easing.EaseOut: t=0 → 0, t=1 → 1, t=0.5 > 0.5 (fast start)" (fun () ->
+        assertClose (Easing.evaluate EaseOut 0.0f) 0.0f eps "t=0"
+        assertClose (Easing.evaluate EaseOut 1.0f) 1.0f eps "t=1"
+        assert' (Easing.evaluate EaseOut 0.5f > 0.5f) "EaseOut at 0.5 > 0.5"
+    )
+
+    testCase "Easing.EaseInOut: t=0 → 0, t=1 → 1, t=0.5 = 0.5, symmetric" (fun () ->
+        assertClose (Easing.evaluate EaseInOut 0.0f) 0.0f eps "t=0"
+        assertClose (Easing.evaluate EaseInOut 1.0f) 1.0f eps "t=1"
+        assertClose (Easing.evaluate EaseInOut 0.5f) 0.5f eps "t=0.5"
+        assert' (Easing.evaluate EaseInOut 0.25f < 0.25f) "slow in first quarter"
+        assert' (Easing.evaluate EaseInOut 0.75f > 0.75f) "fast in third quarter"
+    )
+
+    testCase "Easing.Spring: t=0 → 0, t=1 ≈ 1" (fun () ->
+        assertClose (Easing.evaluate Spring 0.0f) 0.0f 0.05f "t=0"
+        assertClose (Easing.evaluate Spring 1.0f) 1.0f 0.1f  "t=1 (converges)"
+    )
+
+    testCase "Easing clamps t outside [0,1]" (fun () ->
+        assertClose (Easing.evaluate EaseIn -0.5f) 0.0f eps "t<0 → 0"
+        assertClose (Easing.evaluate EaseIn  2.0f) 1.0f eps "t>1 → 1"
+    )
+
+    testCase "Transition.Create: sets Duration and Easing" (fun () ->
+        let t = Transition.Create(0.3f, EaseOut)
+        assertClose t.Duration 0.3f eps "duration"
+        assertEq t.Easing EaseOut "easing"
+        assertClose t.Delay 0.0f eps "no delay"
+    )
+
+    testCase "Transition.Default: 0.2s EaseOut" (fun () ->
+        let t = Transition.Default
+        assertClose t.Duration 0.2f eps "duration"
+        assertEq t.Easing EaseOut "easing"
+    )
+
+    testCase "Transition.Instant: 0s duration" (fun () ->
+        assertClose Transition.Instant.Duration 0.0f eps "zero duration"
+    )
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -569,6 +629,9 @@ let main _ =
     printfn ""
     printfn "-- TEA --"
     testTea ()
+    printfn ""
+    printfn "-- Animation / Easing --"
+    testAnimation ()
     printfn ""
     printfn "============================="
     printfn ""

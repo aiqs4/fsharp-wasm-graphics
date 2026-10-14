@@ -41,6 +41,23 @@ type Transition =
     static member inline Default   = { Duration = 0.2f; Delay = 0.0f; Easing = EaseOut }
     static member inline Create(d, e) = { Duration = d; Delay = 0.0f; Easing = e }
 
+/// Evaluate an easing function at t ∈ [0,1], clamped.
+module Easing =
+    let evaluate (easing: Easing) (t: float32) : float32 =
+        let t = if t < 0.0f then 0.0f elif t > 1.0f then 1.0f else t
+        match easing with
+        | Linear    -> t
+        | EaseIn    -> t * t
+        | EaseOut   -> t * (2.0f - t)
+        | EaseInOut ->
+            if t < 0.5f then 2.0f * t * t
+            else -1.0f + (4.0f - 2.0f * t) * t
+        | Spring    ->
+            // Simple overdamped spring approximation
+            let omega = 8.0f  // stiffness
+            let osc = cos (omega * t * System.MathF.PI)
+            1.0f - (1.0f - t) * osc * (1.0f - t)
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Input events (forwarded to Reactive nodes)
 // ─────────────────────────────────────────────────────────────────────────────
