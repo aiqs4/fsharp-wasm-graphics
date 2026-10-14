@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>FSharp.Math</RootNamespace>
+    <AssemblyName>FSharp.Math</AssemblyName>
+    <Nullable>enable</Nullable>
+    <Optimize>true</Optimize>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Scalar.fs" />
+    <Compile Include="Vec2.fs" />
+    <Compile Include="Vec3.fs" />
+    <Compile Include="Vec4.fs" />
+    <Compile Include="Rect.fs" />
+    <Compile Include="Mat3x2.fs" />
+    <Compile Include="Mat4x4.fs" />
+    <Compile Include="BezierCubic.fs" />
+    <Compile Include="Color.fs" />
+  </ItemGroup>
+</Project>
