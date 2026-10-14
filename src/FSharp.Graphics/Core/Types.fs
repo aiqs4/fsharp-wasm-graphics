@@ -109,13 +109,15 @@ type Color =
 
     /// Alpha-composite fg over bg (Porter-Duff "over").
     static member Over (fg: Color) (bg: Color) =
-        let outA = fg.A + bg.A * (1.0f - fg.A)
-        if outA < 1e-7f then Color.Transparent
+        if fg.A = 0.0f then bg
         else
-            { R = (fg.R * fg.A + bg.R * bg.A * (1.0f - fg.A)) / outA
-              G = (fg.G * fg.A + bg.G * bg.A * (1.0f - fg.A)) / outA
-              B = (fg.B * fg.A + bg.B * bg.A * (1.0f - fg.A)) / outA
-              A = outA }
+            let outA = fg.A + bg.A * (1.0f - fg.A)
+            if outA < 1e-7f then Color.Transparent
+            else
+                { R = (fg.R * fg.A + bg.R * bg.A * (1.0f - fg.A)) / outA
+                  G = (fg.G * fg.A + bg.G * bg.A * (1.0f - fg.A)) / outA
+                  B = (fg.B * fg.A + bg.B * bg.A * (1.0f - fg.A)) / outA
+                  A = outA }
 
     member c.WithAlpha(a: float32) = Color.Create(c.R, c.G, c.B, a)
 
