@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>FSharp.Graphics.GoldenTests</AssemblyName>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Png.fs" />
+    <Compile Include="Rasterizer.fs" />
+    <Compile Include="GoldenFramework.fs" />
+    <Compile Include="GoldenScenes.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/FSharp.Math/FSharp.Math.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Core/FSharp.Graphics.Core.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Scene/FSharp.Graphics.Scene.fsproj" />
+  </ItemGroup>
+</Project>

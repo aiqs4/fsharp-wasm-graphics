@@ -1,0 +1,31 @@
+name: Update Golden Masters
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for golden update'
+        required: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Regenerate all golden masters
+        run: dotnet run --project tests/FSharp.Graphics.GoldenTests/FSharp.Graphics.GoldenTests.fsproj -c Release -- --generate-golden --golden-dir golden/png
+
+      - name: Commit updated masters
+        run: |
+          git config user.name "golden-bot"
+          git config user.email "golden@fsharp-graphics"
+          git add golden/
+          git commit -m "chore(golden): update masters — ${{ github.event.inputs.reason }}" || true
+          git push

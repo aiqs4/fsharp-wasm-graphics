@@ -1,0 +1,35 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        run: dotnet build FSharp.Graphics.slnx -c Release
+
+      - name: Math Tests
+        run: dotnet run --project tests/FSharp.Math.Tests/FSharp.Math.Tests.fsproj -c Release
+
+      - name: Unit + Property Tests
+        run: dotnet run --project tests/FSharp.Graphics.Tests/FSharp.Graphics.Tests.fsproj -c Release
+
+      - name: Generate Actual PNGs
+        run: dotnet run --project tests/FSharp.Graphics.GoldenTests/FSharp.Graphics.GoldenTests.fsproj -c Release -- --actual-dir .golden-actual
+
+      - name: Compare against golden masters
+        run: dotnet run --project tests/FSharp.Graphics.GoldenTests/FSharp.Graphics.GoldenTests.fsproj -c Release -- --compare --golden-dir golden/png --actual-dir .golden-actual
+
+      - name: Upload actual images on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-failures
+          path: .golden-actual/

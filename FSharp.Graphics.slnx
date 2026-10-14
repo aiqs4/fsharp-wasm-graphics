@@ -13,5 +13,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FSharp.Graphics.Tests/FSharp.Graphics.Tests.fsproj" />
+    <Project Path="tests/FSharp.Math.Tests/FSharp.Math.Tests.fsproj" />
+    <Project Path="tests/FSharp.Graphics.GoldenTests/FSharp.Graphics.GoldenTests.fsproj" />
   </Folder>
 </Solution>
