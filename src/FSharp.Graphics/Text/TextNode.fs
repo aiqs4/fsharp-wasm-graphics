@@ -1,5 +1,5 @@
 /// Minimal self-contained text subsystem (GlyphAuro compatibility layer).
-/// In a full deployment this would be replaced by the fsharp-glyph-auro
+/// In a full deployment this would be replaced by the fsharp-glyph-aura
 /// package; the API surface is intentionally identical.
 namespace GlyphAuro
 
