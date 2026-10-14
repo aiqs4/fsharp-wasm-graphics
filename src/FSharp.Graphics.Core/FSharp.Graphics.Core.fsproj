@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>FSharp.Graphics.Core</RootNamespace>
+    <AssemblyName>FSharp.Graphics.Core</AssemblyName>
+    <Nullable>enable</Nullable>
+    <Optimize>true</Optimize>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Types.fs" />
+    <Compile Include="Paint.fs" />
+    <Compile Include="Shadow.fs" />
+    <Compile Include="Stroke.fs" />
+    <Compile Include="CornerRadius.fs" />
+    <Compile Include="TextTypes.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FSharp.Math/FSharp.Math.fsproj" />
+  </ItemGroup>
+</Project>
