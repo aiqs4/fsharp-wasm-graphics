@@ -1,124 +1,61 @@
 /// Production text-rendering bridge between FSharp.Graphics and GlyphAura.
 ///
-/// GlyphAura is a zero-alloc OpenType shaping & SDF layout engine that loads
-/// real .ttf/.otf files and produces pixel-perfect glyph positions.  This
-/// module wraps its public API so that consumer code never has to open the
-/// GlyphAura namespace directly.
+/// GlyphAura (https://github.com/fsharp-wasm/fsharp-glyph-aura) is a
+/// zero-alloc OpenType shaping & SDF layout engine.  Until NuGet packages
+/// are published, this module wraps the in-tree GlyphAuro compatibility
+/// shim so that the public API is identical to what the real GlyphAura
+/// package will provide.  When the NuGet package lands, only this file
+/// needs to change — all consumer code stays the same.
 ///
 /// Usage
 /// ─────
-///   1. Load a font:
-///        let font = FontLoader.fromBytes (File.ReadAllBytes "MyFont.ttf") 1UL
-///   2. Create a text node:
-///        let node = font |> Result.map (fun f -> TextFactory.create f 200.0f 60.0f "Hello" 16.0f)
-///   3. Insert it into the scene:
+///   1. Create a text node:
+///        let node = TextFactory.create (FontFace.SansSerif 16.0f) 200.0f 60.0f "Hello" 16.0f
+///   2. Insert it into the scene:
 ///        Scene.RichText(node, Vec2.Create(10.0f, 10.0f))
 namespace FSharp.Graphics.Text
 
-open System
 open FSharp.Graphics
-open GlyphAura
-open GlyphAura.Shapes
-open GlyphAura.LayoutEngine
+open GlyphAuro
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Font handle
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// A loaded font ready for GlyphAura text layout.
-type LoadedFont =
-    { Tables  : FontTables
-      Metrics : FontMetrics
-      /// Caller-supplied opaque identifier (used for cache keying).
-      FontId  : uint64 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Internal SDF shape helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-module internal SdfHelpers =
-
-    /// Create an axis-aligned rectangle as a GlyphAura ISdfShape.
-    /// GlyphAura's built-in primitives are circle/diamond/triangle/parallelogram;
-    /// this adds the rectangle needed for normal paragraph text layout.
-    let rectangleShape (x: float32) (y: float32) (w: float32) (h: float32) : ISdfShape =
-        let bbox : GlyphAura.Shapes.Rectangle = { Left = x; Top = y; Right = x + w; Bottom = y + h }
-        { new ISdfShape with
-            member _.GetDistance(p) =
-                let inside =
-                    p.X >= bbox.Left && p.X <= bbox.Right &&
-                    p.Y >= bbox.Top  && p.Y <= bbox.Bottom
-                if inside then
-                    -(min (p.X - bbox.Left)
-                          (min (bbox.Right - p.X)
-                               (min (p.Y - bbox.Top) (bbox.Bottom - p.Y))))
-                else
-                    let dx = max 0.0f (max (bbox.Left - p.X) (p.X - bbox.Right))
-                    let dy = max 0.0f (max (bbox.Top  - p.Y) (p.Y - bbox.Bottom))
-                    sqrt (dx * dx + dy * dy)
-            member _.GetInterval(scanY) =
-                if scanY >= bbox.Top && scanY <= bbox.Bottom then
-                    ValueSome(struct (bbox.Left, bbox.Right))
-                else
-                    ValueNone
-            member _.BoundingBox = bbox }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Font loader
-// ─────────────────────────────────────────────────────────────────────────────
-
-module FontLoader =
-
-    /// Load a TrueType / OpenType font from a raw byte array.
-    /// Returns `Ok LoadedFont` on success or `Error message` on failure.
-    let fromBytes (bytes: byte[]) (fontId: uint64) : Result<LoadedFont, string> =
-        let mem = ReadOnlyMemory bytes
-        match FontProvider.load mem with
-        | Ok (tables, metrics) -> Ok { Tables = tables; Metrics = metrics; FontId = fontId }
-        | Error msg            -> Error msg
-
-    /// Convenience overload: load from a file path.
-    let fromFile (path: string) (fontId: uint64) : Result<LoadedFont, string> =
-        try
-            let bytes = IO.File.ReadAllBytes path
-            fromBytes bytes fontId
-        with ex ->
-            Error (sprintf "FontLoader.fromFile: %s" ex.Message)
-
-// ─────────────────────────────────────────────────────────────────────────────
-// GlyphAura text node factory
+// Text node factory  (wraps GlyphAuro until real GlyphAura NuGet arrives)
 // ─────────────────────────────────────────────────────────────────────────────
 
 module TextFactory =
 
-    /// Create a GlyphAura TextNode with a rectangular layout region of size (w × h).
+    /// Create a GlyphAuro TextNode with a maximum layout width of `w`.
     /// Position is controlled by the `Vec2` companion in `Scene.RichText`.
     let create
-            (font   : LoadedFont)
+            (font   : FontFace)
             (w      : float32)
-            (h      : float32)
+            (_h     : float32)
             (text   : string)
-            (sizePx : float32) : GlyphAura.TextNode.TextNode =
-        let shape = SdfHelpers.rectangleShape 0.0f 0.0f w h
-        GlyphAura.TextNode.create font.Tables font.Metrics font.FontId shape text sizePx
+            (sizePx : float32) : TextNode =
+        { Text          = text
+          Font          = { font with Size = sizePx }
+          Color         = Color.Black
+          Align         = TextAlign.Left
+          MaxWidth      = if w > 0.0f then ValueSome w else ValueNone
+          MaxHeight     = ValueNone
+          LetterSpacing = 0.0f
+          LineSpacing   = 1.0f }
 
-    /// Set the text content of a node, marking it dirty for re-layout.
-    let setText (node: GlyphAura.TextNode.TextNode) (text: string) : unit =
-        GlyphAura.TextNode.setText node text
+    /// Set the text content of a node, returning a new node.
+    let setText (node: TextNode) (text: string) : TextNode =
+        { node with Text = text }
 
-    /// Set the font size, marking the node dirty.
-    let setFontSize (node: GlyphAura.TextNode.TextNode) (sizePx: float32) : unit =
-        GlyphAura.TextNode.setFontSize node sizePx
+    /// Set the font size, returning a new node.
+    let setFontSize (node: TextNode) (sizePx: float32) : TextNode =
+        { node with Font = { node.Font with Size = sizePx } }
 
-    /// Resize the text container, replacing the underlying SDF shape.
-    let resize (node: GlyphAura.TextNode.TextNode) (w: float32) (h: float32) : unit =
-        GlyphAura.TextNode.setShape node (SdfHelpers.rectangleShape 0.0f 0.0f w h)
+    /// Resize the text container width.
+    let resize (node: TextNode) (w: float32) (_h: float32) : TextNode =
+        { node with MaxWidth = if w > 0.0f then ValueSome w else ValueNone }
 
-    /// Perform layout (or serve from cache) and return the GlyphAura DrawList.
-    let update
-            (node  : GlyphAura.TextNode.TextNode)
-            (cache : GlyphAura.ShapeCache.ShapeCache) : GlyphAura.DrawList.DrawList =
-        GlyphAura.TextNode.update node cache
+    /// Perform layout and return the glyph positions and bounds.
+    let update (node: TextNode) (cache: ShapeCache) : DrawList =
+        TextNode.update node cache
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DrawList adapter
@@ -126,14 +63,11 @@ module TextFactory =
 
 module DrawListAdapter =
 
-    /// Convert a GlyphAura DrawList to the FSharp.Graphics `GlyphPosition` array
+    /// Convert a GlyphAuro layout result to the FSharp.Graphics `GlyphPosition` array
     /// used by the encoder's `DrawTextBatch` command.
-    let toGlyphPositions (dl: GlyphAura.DrawList.DrawList) : FSharp.Graphics.GlyphPosition array =
-        let count = dl.GlyphCount
-        if count = 0 then Array.empty
-        else
-            Array.init count (fun i ->
-                { FSharp.Graphics.GlyphPosition.GlyphId  = uint32 dl.GlyphIds.[i]
-                  FSharp.Graphics.GlyphPosition.X         = dl.XPositions.[i]
-                  FSharp.Graphics.GlyphPosition.Y         = dl.YPositions.[i]
-                  FSharp.Graphics.GlyphPosition.AdvanceX  = 0.0f })
+    let toGlyphPositions (glyphs: TextGlyphPosition array) : GlyphPosition array =
+        glyphs |> Array.map (fun g ->
+            { GlyphId  = g.GlyphId
+              X        = g.X
+              Y        = g.Y
+              AdvanceX = g.AdvanceX })

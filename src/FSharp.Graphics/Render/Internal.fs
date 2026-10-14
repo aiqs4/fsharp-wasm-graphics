@@ -31,8 +31,8 @@ type internal TextState(node: TextNode) =
 type internal CachedNode =
     | CachedShape     of state     : ShapeState
     | CachedText      of state     : TextState
-    /// GlyphAura-backed retained-mode text node with its own dirty flag and LRU cache.
-    | CachedRichText  of node      : GlyphAura.TextNode.TextNode * position : Vec2
+    /// GlyphAuro-backed retained-mode text node with position.
+    | CachedRichText  of node      : TextNode * position : Vec2
     | CachedImage     of imageId   : ImageId * destRect : Rect * opacity : float32
     | CachedGroup     of children  : CachedNode array * dirty : bool ref * lastBounds : Rect ref
     | CachedStack     of direction : Direction * gap : float32 * alignment : Alignment
@@ -138,12 +138,18 @@ module internal CachedNode =
                 dl
 
         | CachedRichText(node, pos) ->
-            // Delegate to GlyphAura's own retained-mode update, using its own LRU cache.
-            let gaCache = GlyphAura.ShapeCache.defaultCache ()
-            let gaDl    = GlyphAura.TextNode.update node gaCache
-            let glyphs  = FSharp.Graphics.Text.DrawListAdapter.toGlyphPositions gaDl
+            // Use the same text layout as CachedText, but apply position transform.
+            let dl = TextNode.update node shapeCache
+            let (FontId fontIdVal) = node.Font.Id
+            let glyphs, _ = TextNode.layout node
+            let positions : GlyphPosition array =
+                glyphs |> Array.map (fun g ->
+                    { GlyphId  = g.GlyphId
+                      X        = g.X
+                      Y        = g.Y
+                      AdvanceX = g.AdvanceX })
             [| SetTransform (Matrix3x2.Translation(pos.X, pos.Y))
-               DrawTextBatch(glyphs, node.FontId, node.FontSizePx, Color.Black)
+               DrawTextBatch(positions, fontIdVal, node.Font.Size, node.Color)
                SetTransform Matrix3x2.Identity |]
 
         | CachedImage(imageId, destRect, opacity) ->

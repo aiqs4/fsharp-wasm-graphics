@@ -25,11 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- GlyphAura: production OpenType text shaping & SDF layout engine -->
-    <ProjectReference Include="../../lib/GlyphAura/src/GlyphAura/GlyphAura.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <!-- Core foundation types (order matters in F#) -->
     <Compile Include="Core/Types.fs" />
     <Compile Include="Core/Paint.fs" />

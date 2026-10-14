@@ -69,10 +69,10 @@ type Scene =
     | Shape    of primitive: PrimitiveShape
     /// Text run styled by a TextNode (GlyphAuro synthetic font — no .ttf required).
     | Text     of node: TextNode
-    /// Production-quality text node backed by GlyphAura's OpenType engine.
-    /// Requires a loaded font (see FSharp.Graphics.Text.FontLoader).
-    /// The node carries its own retained-mode cache and dirty flag.
-    | RichText of node: GlyphAura.TextNode.TextNode * position: Vec2
+    /// Production-quality text node backed by the GlyphAuro text engine.
+    /// When the fsharp-glyph-aura NuGet package ships, this will use
+    /// real OpenType shaping; the API surface remains identical.
+    | RichText of node: TextNode * position: Vec2
     /// Bitmap or decoded image.
     | Image    of imageId: ImageId * destRect: Rect * opacity: float32
 

@@ -271,3 +271,7 @@ let rec rasterizeScene (canvas: Canvas) (transform: Matrix3x2) (scene: Scene) =
     | Scene.Reactive(_, child)
     | Scene.Animated(_, child) ->
         rasterizeScene canvas transform child
+
+    | Scene.RichText(node, pos) ->
+        let origin = transform.Transform pos
+        rasterizeText canvas origin node

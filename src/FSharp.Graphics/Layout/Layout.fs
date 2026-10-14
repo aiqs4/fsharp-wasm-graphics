@@ -48,9 +48,9 @@ module LayoutEngine =
             Vec2.Create(destRect.W, destRect.H)
 
         | RichText(node, _) ->
-            // GlyphAura bounding box is the shape's rectangle.
-            let bbox = node.Shape.BoundingBox
-            Vec2.Create(bbox.Width, bbox.Height)
+            // Use the text layout to determine size.
+            let _, bounds = TextNode.layout node
+            Vec2.Create(bounds.W, bounds.H)
 
         | Group children ->
             // Group has no layout; size is the union of all children measured
@@ -152,10 +152,10 @@ module LayoutEngine =
               Bounds = { X = origin.X; Y = origin.Y; W = destRect.W; H = destRect.H } }
 
         | RichText(node, _) ->
-            let bbox = node.Shape.BoundingBox
-            // Position the RichText at origin, keeping node width/height from its shape.
+            let _, bounds = TextNode.layout node
+            // Position the RichText at origin.
             { Scene = RichText(node, Vec2.Create(origin.X, origin.Y))
-              Bounds = { X = origin.X; Y = origin.Y; W = bbox.Width; H = bbox.Height } }
+              Bounds = { X = origin.X; Y = origin.Y; W = bounds.W; H = bounds.H } }
 
         | Group children ->
             // All children share the same origin.
