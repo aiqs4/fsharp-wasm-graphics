@@ -11,13 +11,15 @@ type ShapeCache(capacity: int) =
         | false, _ -> None
 
     member _.Put(key: int, shape: ISdfShape) =
-        if cache.Count >= capacity && not (cache.ContainsKey key) then
-            if evictionOrder.Count > 0 then
+        if cache.ContainsKey key then
+            cache.[key] <- shape
+        else
+            if cache.Count >= capacity && evictionOrder.Count > 0 then
                 let evict = evictionOrder.Dequeue()
                 cache.Remove(evict) |> ignore
 
-        cache.[key] <- shape
-        evictionOrder.Enqueue(key)
+            cache.[key] <- shape
+            evictionOrder.Enqueue(key)
 
     member _.Count = cache.Count
 
