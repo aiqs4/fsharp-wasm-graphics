@@ -12,11 +12,13 @@
     <Project Path="src/FSharp.Graphics.Scene/FSharp.Graphics.Scene.fsproj" />
     <Project Path="src/FSharp.Graphics/FSharp.Graphics.fsproj" />
     <Project Path="src/FSharp.Graphics.Tea/FSharp.Graphics.Tea.fsproj" />
+    <Project Path="src/FSharp.Graphics.Wasm/FSharp.Graphics.Wasm.fsproj" />
     <Project Path="src/FSharp.Math/FSharp.Math.fsproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FSharp.Graphics.Tests/FSharp.Graphics.Tests.fsproj" />
     <Project Path="tests/FSharp.Math.Tests/FSharp.Math.Tests.fsproj" />
     <Project Path="tests/FSharp.Graphics.GoldenTests/FSharp.Graphics.GoldenTests.fsproj" />
+    <Project Path="tests/FSharp.Graphics.WasmTests/FSharp.Graphics.WasmTests.fsproj" />
   </Folder>
 </Solution>

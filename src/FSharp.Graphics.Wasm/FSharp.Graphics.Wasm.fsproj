@@ -1,0 +1,83 @@
+<!-- FSharp.Graphics.Wasm — single-project WASM bundle.
+     Includes all library sources directly for reliable WasmGC compilation.
+     See docs/COMPILER-HANDOFF.md (sprint-26b).
+
+     Build (.NET verification):  dotnet build src/FSharp.Graphics.Wasm/FSharp.Graphics.Wasm.fsproj
+     Build to WasmGC:            bash build/build-wasm.sh
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>FSharp.Graphics.Wasm</RootNamespace>
+    <AssemblyName>FSharp.Graphics.Wasm</AssemblyName>
+    <Nullable>enable</Nullable>
+    <Optimize>true</Optimize>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- Fable.Core provides [<Import>], [<CompiledName>], nativeOnly etc. -->
+  <ItemGroup>
+    <PackageReference Include="Fable.Core" Version="4.*" />
+  </ItemGroup>
+
+  <!-- ── FSharp.Math ── -->
+  <ItemGroup>
+    <Compile Include="../FSharp.Math/Scalar.fs" />
+    <Compile Include="../FSharp.Math/Vec2.fs" />
+    <Compile Include="../FSharp.Math/Vec3.fs" />
+    <Compile Include="../FSharp.Math/Vec4.fs" />
+    <Compile Include="../FSharp.Math/Rect.fs" />
+    <Compile Include="../FSharp.Math/Mat3x2.fs" />
+    <Compile Include="../FSharp.Math/Mat4x4.fs" />
+    <Compile Include="../FSharp.Math/BezierCubic.fs" />
+    <Compile Include="../FSharp.Math/Color.fs" />
+  </ItemGroup>
+
+  <!-- ── FSharp.Graphics.Core ── -->
+  <ItemGroup>
+    <Compile Include="../FSharp.Graphics.Core/Types.fs" />
+    <Compile Include="../FSharp.Graphics.Core/Paint.fs" />
+    <Compile Include="../FSharp.Graphics.Core/Shadow.fs" />
+    <Compile Include="../FSharp.Graphics.Core/Stroke.fs" />
+    <Compile Include="../FSharp.Graphics.Core/CornerRadius.fs" />
+    <Compile Include="../FSharp.Graphics.Core/TextTypes.fs" />
+  </ItemGroup>
+
+  <!-- ── FSharp.Graphics.Primitives ── -->
+  <ItemGroup>
+    <Compile Include="../FSharp.Graphics.Primitives/ISdfShape.fs" />
+    <Compile Include="../FSharp.Graphics.Primitives/Shapes.fs" />
+    <Compile Include="../FSharp.Graphics.Primitives/ShapeCache.fs" />
+    <Compile Include="../FSharp.Graphics.Primitives/DrawList.fs" />
+  </ItemGroup>
+
+  <!-- ── FSharp.Graphics.Scene ── -->
+  <ItemGroup>
+    <Compile Include="../FSharp.Graphics.Scene/Animation.fs" />
+    <Compile Include="../FSharp.Graphics.Scene/Scene.fs" />
+    <Compile Include="../FSharp.Graphics.Scene/Layout.fs" />
+    <Compile Include="../FSharp.Graphics.Scene/ActorBuilder.fs" />
+    <Compile Include="../FSharp.Graphics.Scene/Combinators.fs" />
+  </ItemGroup>
+
+  <!-- ── FSharp.Graphics.Render ── -->
+  <ItemGroup>
+    <Compile Include="../FSharp.Graphics.Render/Diff.fs" />
+    <Compile Include="../FSharp.Graphics.Render/CachedNode.fs" />
+    <Compile Include="../FSharp.Graphics.Render/Encode.fs" />
+  </ItemGroup>
+
+  <!-- ── FSharp.Graphics.Tea ── -->
+  <ItemGroup>
+    <Compile Include="../FSharp.Graphics.Tea/Cmd.fs" />
+    <Compile Include="../FSharp.Graphics.Tea/Program.fs" />
+    <Compile Include="../FSharp.Graphics.Tea/Runtime.fs" />
+  </ItemGroup>
+
+  <!-- ── WASM entry points ── -->
+  <ItemGroup>
+    <Compile Include="WasmEntry.fs" />
+  </ItemGroup>
+
+</Project>

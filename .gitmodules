@@ -1,6 +1,6 @@
 [submodule "lib/GlyphAura"]
 	path = lib/GlyphAura
-	url = ../fsharp-glyph-aura
+	url = https://github.com/fsharp-wasm/fsharp-glyph-aura
 [submodule "tools/fsharp-wasm"]
 	path = tools/fsharp-wasm
 	url = ../fsharp-wasm

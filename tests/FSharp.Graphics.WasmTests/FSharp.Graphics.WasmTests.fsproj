@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>FSharp.Graphics.WasmTests</AssemblyName>
+    <Nullable>enable</Nullable>
+    <Description>WASM tests: run on .NET for CI; compile to WasmGC for in-browser testing.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="WasmTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/FSharp.Graphics.Wasm/FSharp.Graphics.Wasm.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fable.Core" Version="4.*" />
+  </ItemGroup>
+
+</Project>

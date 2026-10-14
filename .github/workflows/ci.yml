@@ -6,6 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -15,11 +17,17 @@ jobs:
       - name: Build
         run: dotnet build FSharp.Graphics.slnx -c Release
 
+      - name: Build WASM project (.NET verification)
+        run: dotnet build src/FSharp.Graphics.Wasm/FSharp.Graphics.Wasm.fsproj -c Release
+
       - name: Math Tests
         run: dotnet run --project tests/FSharp.Math.Tests/FSharp.Math.Tests.fsproj -c Release
 
       - name: Unit + Property Tests
         run: dotnet run --project tests/FSharp.Graphics.Tests/FSharp.Graphics.Tests.fsproj -c Release
+
+      - name: WASM Tests (.NET mode)
+        run: dotnet run --project tests/FSharp.Graphics.WasmTests/FSharp.Graphics.WasmTests.fsproj -c Release
 
       - name: Generate Actual PNGs
         run: dotnet run --project tests/FSharp.Graphics.GoldenTests/FSharp.Graphics.GoldenTests.fsproj -c Release -- --actual-dir .golden-actual
