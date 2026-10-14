@@ -294,6 +294,7 @@ module Encode =
     /// written. The buffer must be large enough; use `encode` for automatic
     /// growth.
     let encodeInto (drawList: DrawList) (buffer: byte[]) : int =
+        frameSeq <- frameSeq + 1u
         let bufRef = ref buffer
         let offRef = ref 0
 

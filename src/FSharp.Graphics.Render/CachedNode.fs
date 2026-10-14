@@ -16,7 +16,7 @@ open FSharp.Graphics.Scene
 type internal ShapeState(primitive: PrimitiveShape) =
     member val Primitive      : PrimitiveShape   = primitive
     member val Dirty          : bool             = true       with get, set
-    member val CachedDrawList : DrawList voption  = ValueNone  with get, set
+    member val CachedDrawList : DrawList voption = ValueNone with get, set
 
 /// Internal animation state
 [<AllowNullLiteral>]
