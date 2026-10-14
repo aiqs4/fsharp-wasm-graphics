@@ -394,11 +394,11 @@ let testHitTestProperties () =
     )
 
     prop "Zero-scale transform collapses to origin" (fun () ->
-        let m = Matrix3x2.Scale(0.0f, 0.0f)
-        let p = Vec2.Create(10.0f, 20.0f)
-        let result = m.Transform(p)
-        if not (vecClose result Vec2.Zero 1e-5f) then
-            failwith "Zero-scale did not collapse to origin"
+        Check.One(fsCheckConfig, fun (v: Vec2) ->
+            let m = Matrix3x2.Scale(0.0f, 0.0f)
+            let result = m.Transform(v)
+            vecClose result Vec2.Zero 1e-5f
+        )
     )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -411,9 +411,11 @@ let private mkShape (w: float32) (h: float32) =
 
 let testLayoutProperties () =
     prop "Layout: Empty measures to zero" (fun () ->
-        let size = LayoutEngine.measure Empty (Vec2.Create(1000.0f, 1000.0f))
-        if not (vecClose size Vec2.Zero 1e-5f) then
-            failwith "Empty did not measure to zero"
+        Check.One(fsCheckConfig, fun (w: Rect) ->
+            let available = Vec2.Create(w.W, w.H)
+            let size = LayoutEngine.measure Empty available
+            vecClose size Vec2.Zero 1e-5f
+        )
     )
 
     prop "Layout: Shape measure = its bounds size" (fun () ->
@@ -490,10 +492,12 @@ let testLayoutProperties () =
 
 let testDiffProperties () =
     prop "Diff: identical scene → NoChange" (fun () ->
-        let scene = mkShape 100.0f 50.0f
-        match Diff.diff scene scene with
-        | NoChange -> ()
-        | d -> failwithf "Expected NoChange, got %A" d
+        Check.One(fsCheckConfig, fun (r: Rect) ->
+            let scene = mkShape r.W r.H
+            match Diff.diff scene scene with
+            | NoChange -> true
+            | _ -> false
+        )
     )
 
     prop "Diff: same-reference scene → NoChange" (fun () ->
@@ -506,17 +510,21 @@ let testDiffProperties () =
     )
 
     prop "Diff: structurally different types → Replace" (fun () ->
-        let s1 = mkShape 100.0f 50.0f
-        let s2 = Shape (Circle(Vec2.Create(50.0f, 50.0f), 20.0f, Solid Color.Blue, Option.None, Option.None))
-        match Diff.diff s1 s2 with
-        | Replace _ -> ()
-        | d -> failwithf "Expected Replace, got %A" d
+        Check.One(fsCheckConfig, fun (r: Rect) ->
+            let s1 = mkShape r.W r.H
+            let s2 = Shape (Circle(Vec2.Create(50.0f, 50.0f), 20.0f, Solid Color.Blue, Option.None, Option.None))
+            match Diff.diff s1 s2 with
+            | Replace _ -> true
+            | _ -> false
+        )
     )
 
     prop "Diff: Empty to Empty → NoChange" (fun () ->
-        match Diff.diff Empty Empty with
-        | NoChange -> ()
-        | d -> failwithf "Expected NoChange, got %A" d
+        Check.One(fsCheckConfig, fun (_: Vec2) ->
+            match Diff.diff Empty Empty with
+            | NoChange -> true
+            | _ -> false
+        )
     )
 
 // ─────────────────────────────────────────────────────────────────────────────
