@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>FSharp.Graphics.Scene</RootNamespace>
+    <AssemblyName>FSharp.Graphics.Scene</AssemblyName>
+    <Nullable>enable</Nullable>
+    <Optimize>true</Optimize>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Animation.fs" />
+    <Compile Include="Scene.fs" />
+    <Compile Include="Layout.fs" />
+    <Compile Include="ActorBuilder.fs" />
+    <Compile Include="Combinators.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FSharp.Math/FSharp.Math.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Core/FSharp.Graphics.Core.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" />
+  </ItemGroup>
+</Project>
