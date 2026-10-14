@@ -2,6 +2,9 @@
   <Folder Name="/demo/">
     <Project Path="demo/FSharp.Graphics.Demo/FSharp.Graphics.Demo.fsproj" />
   </Folder>
+  <Folder Name="/lib/">
+    <Project Path="lib/GlyphAura/src/GlyphAura/GlyphAura.fsproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/FSharp.Graphics.Core/FSharp.Graphics.Core.fsproj" />
     <Project Path="src/FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" />

@@ -17,5 +17,11 @@
     <ProjectReference Include="../../src/FSharp.Graphics.Core/FSharp.Graphics.Core.fsproj" />
     <ProjectReference Include="../../src/FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" />
     <ProjectReference Include="../../src/FSharp.Graphics.Scene/FSharp.Graphics.Scene.fsproj" />
+    <ProjectReference Include="../../lib/GlyphAura/src/GlyphAura/GlyphAura.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Copy the bundled DejaVuSans font from GlyphAura's test data -->
+    <None Include="../../lib/GlyphAura/tests/GlyphAura.Tests/TestData/DejaVuSans.ttf"
+          CopyToOutputDirectory="PreserveNewest" Link="TestData/DejaVuSans.ttf" />
   </ItemGroup>
 </Project>

@@ -136,6 +136,35 @@ let scene010 () =
         })
     )
 
+/// 011: Text + shape composition (M2 — GlyphAura integration)
+let scene011 () =
+    Group [
+        // Background card
+        Shape(Rectangle {
+            Bounds  = Rect.create 40.0f 40.0f 320.0f 180.0f
+            Radius  = CornerRadius.all 14.0f
+            Fill    = Solid(Color.rgb 245uy 245uy 250uy)
+            Stroke  = Some (Stroke.solid (Color.rgb 180uy 180uy 200uy) 1.5f)
+            Shadow  = Some (Shadow.drop (Vec2.create 2.0f 4.0f) 8.0f (Color.rgba 0uy 0uy 0uy 60uy))
+        })
+        // Title text
+        Text(
+            "Hello, GlyphAura!",
+            { FontId = FontId 1UL; SizePx = 22.0f; Color = Color.rgb 30uy 30uy 80uy
+              Weight = Bold; Align = Left; Wrap = false
+              Overflow = TextOverflow.Clip
+              LetterSpacing = 0.0f; LineHeight = 1.2f }
+        )
+        // Subtitle text
+        Text(
+            "OpenType shaping in F#",
+            { FontId = FontId 1UL; SizePx = 14.0f; Color = Color.rgb 80uy 80uy 120uy
+              Weight = Regular; Align = Left; Wrap = false
+              Overflow = TextOverflow.Clip
+              LetterSpacing = 0.0f; LineHeight = 1.2f }
+        )
+    ]
+
 /// 012: Inner shadow on rect
 let scene012 () =
     Shape(Rectangle {
@@ -238,7 +267,7 @@ let allScenes = [
     "008_zstack_opacity",      scene008
     "009_clip",                scene009
     "010_transform_translate", scene010
-    // 011_text_shape: SKIPPED — requires GlyphAuro integration (M2)
+    "011_text_shape",          scene011
     "012_inner_shadow",        scene012
     "013_image_fill",          scene013
     "014_stroked_circle",      scene014
