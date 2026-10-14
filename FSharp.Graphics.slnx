@@ -8,6 +8,7 @@
     <Project Path="src/FSharp.Graphics.Render/FSharp.Graphics.Render.fsproj" />
     <Project Path="src/FSharp.Graphics.Scene/FSharp.Graphics.Scene.fsproj" />
     <Project Path="src/FSharp.Graphics/FSharp.Graphics.fsproj" />
+    <Project Path="src/FSharp.Graphics.Tea/FSharp.Graphics.Tea.fsproj" />
     <Project Path="src/FSharp.Math/FSharp.Math.fsproj" />
   </Folder>
   <Folder Name="/tests/">

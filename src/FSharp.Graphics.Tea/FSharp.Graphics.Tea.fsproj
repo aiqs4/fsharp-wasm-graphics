@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>FSharp.Graphics.Tea</RootNamespace>
+    <AssemblyName>FSharp.Graphics.Tea</AssemblyName>
+    <Nullable>enable</Nullable>
+    <Optimize>true</Optimize>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Cmd.fs" />
+    <Compile Include="Program.fs" />
+    <Compile Include="Runtime.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FSharp.Math/FSharp.Math.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Core/FSharp.Graphics.Core.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Scene/FSharp.Graphics.Scene.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Render/FSharp.Graphics.Render.fsproj" />
+  </ItemGroup>
+</Project>

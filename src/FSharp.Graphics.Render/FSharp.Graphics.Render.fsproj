@@ -8,6 +8,11 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>FSharp.Graphics.Tea</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Diff.fs" />
     <Compile Include="CachedNode.fs" />
     <Compile Include="Encode.fs" />
