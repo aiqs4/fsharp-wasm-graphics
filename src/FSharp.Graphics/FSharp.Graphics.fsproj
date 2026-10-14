@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>FSharp.Graphics</RootNamespace>
+    <AssemblyName>FSharp.Graphics</AssemblyName>
+    <Nullable>enable</Nullable>
+    <Optimize>true</Optimize>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Pure-F# retained-mode graphics stack: SDF primitives, scene graph, layout, diff, linear encoder, and TEA runtime.</Description>
+    <Authors>FSharp.Graphics Contributors</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/aiqs4/fsharp-wasm-graphics</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Core foundation types (order matters in F#) -->
+    <Compile Include="Core/Types.fs" />
+    <Compile Include="Core/Paint.fs" />
+    <Compile Include="Core/ISdfShape.fs" />
+
+    <!-- Text subsystem (GlyphAuro compatibility layer) -->
+    <Compile Include="Text/TextNode.fs" />
+
+    <!-- SDF shape implementations -->
+    <Compile Include="Primitives/SdfShapes.fs" />
+    <Compile Include="Primitives/Primitives.fs" />
+
+    <!-- Scene graph -->
+    <Compile Include="Scene/Scene.fs" />
+    <Compile Include="Scene/Diff.fs" />
+
+    <!-- Layout engine -->
+    <Compile Include="Layout/Layout.fs" />
+
+    <!-- Render layer (internal cache + encoder) -->
+    <Compile Include="Render/Internal.fs" />
+    <Compile Include="Render/Encode.fs" />
+
+    <!-- TEA runtime -->
+    <Compile Include="Tea/Tea.fs" />
+    <Compile Include="Tea/Runtime.fs" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/demo/">
+    <Project Path="demo/FSharp.Graphics.Demo/FSharp.Graphics.Demo.fsproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/FSharp.Graphics/FSharp.Graphics.fsproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FSharp.Graphics.Tests/FSharp.Graphics.Tests.fsproj" />
+  </Folder>
+</Solution>
