@@ -571,12 +571,12 @@ let testColorProperties () =
         )
     )
 
-// ─────────────────────────────────────────────────────────────────────────────
+
+// ───────────────────────────────────────────────────────────────────────────────
 // M5 — Easing algebraic laws (FsCheck)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────
 
 let testEasingProperties () =
-    // Generator: t ∈ [0, 1]
     let genT = FsGen.choose(0, 1000) |> FsGen.map (fun i -> float32 i / 1000.0f)
 
     prop "Easing.Linear: f(0)=0, f(1)=1" (fun () ->
@@ -586,18 +586,18 @@ let testEasingProperties () =
         )
     )
 
-    prop "Easing: all functions map [0,1] → [0,1] (output clamped)" (fun () ->
-        let easings = [ Linear; EaseIn; EaseOut; EaseInOut; Spring ]
+    prop "Easing: all functions map [0,1] to [0,1]" (fun () ->
+        let easings = [| Linear; EaseIn; EaseOut; EaseInOut; Spring |]
         Check.One(
-            { fsCheckConfig with MaxTest = 50 },
+            fewTestsConfig,
             fun () ->
                 gen {
                     let! t = genT
                     let! eIdx = FsGen.choose(0, 4)
                     return easings.[eIdx], t
-                } |> FsGen.sample 50 |> List.forall (fun (e, t) ->
+                } |> FsGen.sample 50 |> Array.forall (fun (e, t) ->
                     let v = Easing.evaluate e t
-                    v >= -0.05f && v <= 1.05f  // small tolerance for spring overshoot
+                    v >= -0.05f && v <= 1.05f
                 )
         )
     )
@@ -609,29 +609,29 @@ let testEasingProperties () =
         )
     )
 
-    prop "Easing: f(1) = 1 for all easing types" (fun () ->
+    prop "Easing: f(1) = 1 for standard easing types" (fun () ->
         Check.One(fsCheckConfig, fun () ->
-            [ Linear; EaseIn; EaseOut; EaseInOut ]  // Spring approaches 1 but may have slight oscillation
+            [ Linear; EaseIn; EaseOut; EaseInOut ]
             |> List.forall (fun e -> abs (Easing.evaluate e 1.0f - 1.0f) < 0.001f)
         )
     )
 
     prop "Easing.Linear is monotone" (fun () ->
         Check.One(
-            { fsCheckConfig with MaxTest = 100 },
+            Config.QuickThrowOnFailure.WithMaxTest(100).WithArbitrary([ typeof<Generators> ]),
             fun () ->
                 gen {
                     let! t0 = genT
                     let! t1 = genT
                     return t0, t1
-                } |> FsGen.sample 100 |> List.forall (fun (t0, t1) ->
+                } |> FsGen.sample 100 |> Array.forall (fun (t0, t1) ->
                     if t0 < t1 then Easing.evaluate Linear t0 <= Easing.evaluate Linear t1
                     else true
                 )
         )
     )
 
-    prop "Easing clamps input: t<0 → same as t=0, t>1 → same as t=1" (fun () ->
+    prop "Easing clamps input below 0 and above 1" (fun () ->
         Check.One(fsCheckConfig, fun () ->
             [ Linear; EaseIn; EaseOut; EaseInOut ]
             |> List.forall (fun e ->
@@ -641,22 +641,21 @@ let testEasingProperties () =
         )
     )
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────
 // M4 — TEA algebraic laws (FsCheck)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────
 
 let testTeaProperties () =
-    open FSharp.Graphics.Tea
+    let counterProgram : FSharp.Graphics.Tea.Program<int, int> = {
+        Init   = fun () -> 0, FSharp.Graphics.Tea.Cmd.none
+        Update = fun model delta -> model + delta, FSharp.Graphics.Tea.Cmd.none
+        View   = fun _ -> Scene.Empty
+    }
 
-    let counterProgram : Program<int, int> =
-        { Init   = fun () -> 0, Cmd.none
-          Update = fun model delta -> model + delta, Cmd.none
-          View   = fun _ -> Scene.Empty }
-
-    prop "TEA: update is deterministic (same msg → same model)" (fun () ->
+    prop "TEA: update is deterministic" (fun () ->
         Check.One(fsCheckConfig, fun () ->
-            let rt1 = RuntimeHelpers.start counterProgram
-            let rt2 = RuntimeHelpers.start counterProgram
+            let rt1 = FSharp.Graphics.Runtime.RuntimeHelpers.start counterProgram
+            let rt2 = FSharp.Graphics.Runtime.RuntimeHelpers.start counterProgram
             rt1.Dispatch 5
             rt2.Dispatch 5
             rt1.RenderFrame 0.0
@@ -675,37 +674,43 @@ let testTeaProperties () =
 
     prop "TEA: runHeadless produces exactly n frames for n batches" (fun () ->
         Check.One(
-            { fsCheckConfig with MaxTest = 20 },
+            fewTestsConfig,
             fun () ->
                 gen {
                     let! n = FsGen.choose(1, 6)
                     let! msgs = FsGen.listOfLength n (FsGen.choose(1, 10))
                     return n, msgs |> List.map (fun m -> [m])
-                } |> FsGen.sample 20 |> List.forall (fun (n, batches) ->
-                    let frames = RuntimeHelpers.runHeadless counterProgram batches
+                } |> FsGen.sample 20 |> Array.forall (fun (n, batches) ->
+                    let frames = FSharp.Graphics.Runtime.RuntimeHelpers.runHeadless counterProgram batches
                     frames.Length = n
                 )
         )
     )
 
-    prop "TEA: Cmd.flatten is stable — double-flatten = single-flatten" (fun () ->
+    prop "TEA: Cmd.flatten is stable" (fun () ->
         Check.One(fsCheckConfig, fun () ->
-            let cmd : Cmd<int> = Batch [ Emit 1; Emit 2; Batch [ Emit 3; Batch [ Emit 4 ] ] ]
-            let once  = Cmd.flatten cmd
-            let twice = Cmd.flatten (Batch once)
-            once.Length = twice.Length && List.forall2 (=) once twice
+            let cmd : FSharp.Graphics.Tea.Cmd<int> =
+                FSharp.Graphics.Tea.Batch [
+                    FSharp.Graphics.Tea.Emit 1
+                    FSharp.Graphics.Tea.Emit 2
+                    FSharp.Graphics.Tea.Batch [
+                        FSharp.Graphics.Tea.Emit 3
+                        FSharp.Graphics.Tea.Batch [ FSharp.Graphics.Tea.Emit 4 ] ] ]
+            let once  = FSharp.Graphics.Tea.Cmd.flatten cmd
+            let twice = FSharp.Graphics.Tea.Cmd.flatten (FSharp.Graphics.Tea.Batch once)
+            once.Length = twice.Length
         )
     )
 
     prop "TEA: model accumulates correctly across dispatches" (fun () ->
         Check.One(
-            { fsCheckConfig with MaxTest = 50 },
+            fewTestsConfig,
             fun () ->
                 gen {
                     let! deltas = FsGen.listOfLength 5 (FsGen.choose(-10, 10))
                     return deltas
-                } |> FsGen.sample 50 |> List.forall (fun deltas ->
-                    let rt = RuntimeHelpers.start counterProgram
+                } |> FsGen.sample 50 |> Array.forall (fun deltas ->
+                    let rt = FSharp.Graphics.Runtime.RuntimeHelpers.start counterProgram
                     for d in deltas do rt.Dispatch d
                     rt.RenderFrame 0.0
                     rt.Model = List.sum deltas

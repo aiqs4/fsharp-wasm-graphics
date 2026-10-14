@@ -275,7 +275,7 @@ let renderText (fb: Framebuffer) (text: string) (style: FSharp.Graphics.Core.Tex
             Alignment = GlyphAura.LayoutEngine.Left
         }
         let result = GlyphAura.LayoutEngine.layout req
-        let glyphs = result.Glyphs.Span
+        let glyphs : System.Span<GlyphAura.LayoutEngine.GlyphPosition> = result.Glyphs.Span
         // Scale from font units to pixels
         let scale = sizePx / float32 metrics.UnitsPerEm
         let glyphH = float32 (int metrics.Ascender - int metrics.Descender) * scale
@@ -301,7 +301,7 @@ let renderText (fb: Framebuffer) (text: string) (style: FSharp.Graphics.Core.Tex
                         let col = Color.withAlpha (float32 textColor.A / 255.0f * alpha) textColor
                         fb.Composite(gx + dx, gy + dy, col, clip)
         // Return the pool buffer
-        System.Buffers.ArrayPool<GlyphAura.LayoutEngine.GlyphPosition>.Shared.Return(result.GlyphBuffer)
+        System.Buffers.ArrayPool.Shared.Return(result.GlyphBuffer)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Gaussian blur (M3 — approximate box blur)
