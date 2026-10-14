@@ -19,33 +19,31 @@ open FSharp.Graphics
 open System
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Opcodes
-// ─────────────────────────────────────────────────────────────────────────────
-
-[<Literal>]
-let OpcodeBeginFrame   = 0xFEuy
-[<Literal>]
-let OpcodeDrawShape    = 0x01uy
-[<Literal>]
-let OpcodeDrawText     = 0x02uy
-[<Literal>]
-let OpcodeDrawImage    = 0x03uy
-[<Literal>]
-let OpcodePushClip     = 0x04uy
-[<Literal>]
-let OpcodePopClip      = 0x05uy
-[<Literal>]
-let OpcodeSetTransform = 0x06uy
-[<Literal>]
-let OpcodeSetOpacity   = 0x07uy
-[<Literal>]
-let OpcodeEndFrame     = 0xFFuy
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Encode module
 // ─────────────────────────────────────────────────────────────────────────────
 
 module Encode =
+
+    // ── Opcodes ──────────────────────────────────────────────────────────────
+
+    [<Literal>]
+    let OpcodeBeginFrame   = 0xFEuy
+    [<Literal>]
+    let OpcodeDrawShape    = 0x01uy
+    [<Literal>]
+    let OpcodeDrawText     = 0x02uy
+    [<Literal>]
+    let OpcodeDrawImage    = 0x03uy
+    [<Literal>]
+    let OpcodePushClip     = 0x04uy
+    [<Literal>]
+    let OpcodePopClip      = 0x05uy
+    [<Literal>]
+    let OpcodeSetTransform = 0x06uy
+    [<Literal>]
+    let OpcodeSetOpacity   = 0x07uy
+    [<Literal>]
+    let OpcodeEndFrame     = 0xFFuy
 
     // ── Low-level writers ────────────────────────────────────────────────────
 

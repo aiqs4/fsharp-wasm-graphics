@@ -247,20 +247,24 @@ module TextNode =
 
     /// Produce the DrawList for a text node, refreshing ShapeCache as needed.
     let update (node: TextNode) (cache: ShapeCache) : DrawList =
+        let (FontId fontIdVal) = node.Font.Id
+        let alignInt =
+            match node.Align with
+            | TextAlign.Left   -> 0
+            | TextAlign.Center -> 1
+            | TextAlign.Right  -> 2
         let key =
-            let FontId fid = node.Font.Id
-            sprintf "text:%s:%d:%.1f:%d" node.Text (int fid) node.Font.Size (int node.Align)
+            sprintf "text:%s:%d:%.1f:%d" node.Text (int fontIdVal) node.Font.Size alignInt
         match cache.TryGet key with
         | ValueSome dl -> dl
         | ValueNone ->
             let glyphs, _ = layout node
-            let FontId fid = node.Font.Id
             let positions : GlyphPosition array =
                 glyphs |> Array.map (fun g ->
                     { GlyphId  = g.GlyphId
                       X        = g.X
                       Y        = g.Y
                       AdvanceX = g.AdvanceX })
-            let dl : DrawList = [| DrawTextBatch(positions, fid, node.Font.Size, node.Color) |]
+            let dl : DrawList = [| DrawTextBatch(positions, fontIdVal, node.Font.Size, node.Color) |]
             cache.Put(key, dl)
             dl

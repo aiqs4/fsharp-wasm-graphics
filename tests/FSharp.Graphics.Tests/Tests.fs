@@ -5,10 +5,12 @@ module FSharp.Graphics.Tests.Tests
 
 open FSharp.Graphics
 open FSharp.Graphics.Primitives
+open FSharp.Graphics.Primitives.Shapes
 open FSharp.Graphics.Scene
 open FSharp.Graphics.Layout
 open FSharp.Graphics.Render
 open FSharp.Graphics.Tea
+open FSharp.Graphics.Runtime
 open GlyphAuro
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -221,8 +223,8 @@ let testPrimitives () =
         let s = Stroke.Solid(Color.Black, 2.0f)
         let p' = withStroke s p
         match p'.Stroke with
-        | Some st -> assertClose st.Thickness 2.0f 1e-5f "thickness"
-        | None    -> failwith "expected stroke"
+        | Some st     -> assertClose st.Thickness 2.0f 1e-5f "thickness"
+        | Option.None -> failwith "expected stroke"
     )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -354,16 +356,18 @@ let testLayout () =
 let testDiff () =
     testCase "diff None prev = Replace" (fun () ->
         let scene = rectSimple 0.0f 0.0f 10.0f 10.0f Color.Red |> Shape
-        let delta = Diff.diffOpt None scene
+        let delta = Diff.diffOpt Option.None scene
         match delta with
-        | Diff.Replace _ -> ()
-        | _              -> failwithf "expected Replace, got %A" delta
+        | Replace _ -> ()
+        | _         -> failwithf "expected Replace, got %A" delta
     )
 
     testCase "diff identical scene = NoChange" (fun () ->
         let scene = rectSimple 0.0f 0.0f 10.0f 10.0f Color.Red |> Shape
         let delta = Diff.diffOpt (Some scene) scene
-        assertEq delta Diff.NoChange "identical scene"
+        match delta with
+        | NoChange -> ()
+        | _        -> failwithf "expected NoChange, got %A" delta
     )
 
     testCase "diff changed opacity = UpdateOpacity" (fun () ->
@@ -372,8 +376,8 @@ let testDiff () =
         let next  = Opacity(0.5f, child)
         let delta = Diff.diff prev next
         match delta with
-        | Diff.UpdateOpacity 0.5f -> ()
-        | _                       -> failwithf "expected UpdateOpacity 0.5, got %A" delta
+        | UpdateOpacity 0.5f -> ()
+        | _                  -> failwithf "expected UpdateOpacity 0.5, got %A" delta
     )
 
     testCase "diff changed transform = UpdateTransform" (fun () ->
@@ -382,8 +386,8 @@ let testDiff () =
         let next  = Transform(Matrix3x2.Translation(5.0f, 5.0f), child)
         let delta = Diff.diff prev next
         match delta with
-        | Diff.UpdateTransform _ -> ()
-        | _                      -> failwithf "expected UpdateTransform, got %A" delta
+        | UpdateTransform _ -> ()
+        | _                 -> failwithf "expected UpdateTransform, got %A" delta
     )
 
     testCase "diff group child change = UpdateChildren" (fun () ->
@@ -394,8 +398,8 @@ let testDiff () =
         let next = Group [ c1; c3 ]
         let delta = Diff.diff prev next
         match delta with
-        | Diff.UpdateChildren [(1, Diff.Replace _)] -> ()
-        | _                                          -> failwithf "unexpected delta %A" delta
+        | UpdateChildren [(1, Replace _)] -> ()
+        | _                               -> failwithf "unexpected delta %A" delta
     )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -473,14 +477,14 @@ let testRenderInternal () =
     testCase "applyDelta NoChange returns same" (fun () ->
         let scene = Empty
         let node  = Render.Internal.CachedNode.build scene
-        let node' = Render.Internal.CachedNode.applyDelta Diff.NoChange node
+        let node' = Render.Internal.CachedNode.applyDelta NoChange node
         assert' (obj.ReferenceEquals(node, node')) "same reference"
     )
 
     testCase "applyDelta Replace rebuilds" (fun () ->
         let prev  = Render.Internal.CachedNode.build Empty
         let next  = circleSimple 0.0f 0.0f 10.0f Color.Red |> Shape
-        let node' = Render.Internal.CachedNode.applyDelta (Diff.Replace next) prev
+        let node' = Render.Internal.CachedNode.applyDelta (Replace next) prev
         match node' with
         | Render.Internal.CachedShape _ -> ()
         | _ -> failwith "expected CachedShape after Replace"
@@ -507,13 +511,13 @@ let testTea () =
                            LineSpacing   = 1.0f } }
 
     testCase "Runtime.runHeadless produces one frame per input batch" (fun () ->
-        let frames = Runtime.runHeadless counterProgram
+        let frames = RuntimeHelpers.runHeadless counterProgram
                          [ [true; true]; [false] ]
         assertEq frames.Length 2 "two frames"
     )
 
     testCase "Runtime.runHeadless frames are non-empty" (fun () ->
-        let frames = Runtime.runHeadless counterProgram [ [true] ]
+        let frames = RuntimeHelpers.runHeadless counterProgram [ [true] ]
         assert' (frames.Head.Length > 0) "frame has bytes"
     )
 
@@ -524,7 +528,7 @@ let testTea () =
     )
 
     testCase "Runtime model update" (fun () ->
-        let rt = Runtime.start counterProgram
+        let rt = RuntimeHelpers.start counterProgram
         rt.Dispatch true
         rt.Dispatch true
         rt.RenderFrame 0.0

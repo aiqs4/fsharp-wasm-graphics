@@ -13,6 +13,7 @@ open FSharp.Graphics.Scene
 open FSharp.Graphics.Layout
 open FSharp.Graphics.Render
 open FSharp.Graphics.Tea
+open FSharp.Graphics.Runtime
 open GlyphAuro
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -45,7 +46,7 @@ let buildScene () : Scene =
             Rect.Create(20.0f, 20.0f, 200.0f, 120.0f),
             CornerRadius.All 16.0f,
             Solid (Color.Create(0.18f, 0.42f, 0.78f, 1.0f)),
-            None,
+            Option.None,
             Some (Shadow.Simple(4.0f, 6.0f, 12.0f, Color.Create(0.0f, 0.0f, 0.0f, 0.35f))))
         |> Shape
 
@@ -97,7 +98,7 @@ let buildScene () : Scene =
                 Vec2.Create(120.0f, 220.0f), 90.0f,
                 [| { Offset = 0.0f; Color = Color.Create(0.95f, 0.25f, 0.6f, 1.0f) }
                    { Offset = 1.0f; Color = Color.Create(0.35f, 0.0f,  0.8f, 0.5f) } |]),
-            None, None)
+            Option.None, Option.None)
         |> Shape
 
     // ── Stroked green rectangle ───────────────────────────────────────────────
@@ -107,7 +108,7 @@ let buildScene () : Scene =
             CornerRadius.Create(8.0f, 8.0f, 24.0f, 4.0f),
             Solid (Color.Create(0.15f, 0.75f, 0.35f, 0.8f)),
             Some (Stroke.Solid(Color.Create(0.05f, 0.45f, 0.15f, 1.0f), 2.5f)),
-            None)
+            Option.None)
         |> Shape
 
     // ── Mini VStack of coloured bars (tests nested stacks) ───────────────────
@@ -146,7 +147,7 @@ let exercisePipeline (scene: Scene) =
             layoutResult.Bounds.W layoutResult.Bounds.H
 
     // 2. Diff (first frame – full replace)
-    let delta1 = Diff.diffOpt None scene
+    let delta1 = Diff.diffOpt Option.None scene
     printfn "Frame-1 delta: %A" (delta1.GetType().Name)
 
     // 3. Diff with identical scene (should be NoChange)
@@ -189,7 +190,7 @@ let counterProgram : Program<int, CounterMsg> =
                    Padding(Insets.All 20.0f, label) }
 
 let runTeaDemo () =
-    let frames = Runtime.runHeadless counterProgram
+    let frames = RuntimeHelpers.runHeadless counterProgram
                      [ [Increment; Increment]
                        [Increment]
                        [Decrement] ]

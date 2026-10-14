@@ -47,6 +47,11 @@ module LayoutEngine =
         | Image(_, destRect, _) ->
             Vec2.Create(destRect.W, destRect.H)
 
+        | RichText(node, _) ->
+            // GlyphAura bounding box is the shape's rectangle.
+            let bbox = node.Shape.BoundingBox
+            Vec2.Create(bbox.Width, bbox.Height)
+
         | Group children ->
             // Group has no layout; size is the union of all children measured
             // at the same origin.
@@ -146,6 +151,12 @@ module LayoutEngine =
             { Scene = scene
               Bounds = { X = origin.X; Y = origin.Y; W = destRect.W; H = destRect.H } }
 
+        | RichText(node, _) ->
+            let bbox = node.Shape.BoundingBox
+            // Position the RichText at origin, keeping node width/height from its shape.
+            { Scene = RichText(node, Vec2.Create(origin.X, origin.Y))
+              Bounds = { X = origin.X; Y = origin.Y; W = bbox.Width; H = bbox.Height } }
+
         | Group children ->
             // All children share the same origin.
             let results =
@@ -215,14 +226,14 @@ module LayoutEngine =
                     let childOrigin =
                         let y =
                             match alignment with
-                            | Start   -> origin.Y
-                            | End     -> origin.Y + available.Y - sz.Y
-                            | Center  -> origin.Y + (available.Y - sz.Y) * 0.5f
-                            | Stretch -> origin.Y
+                            | Alignment.Start   -> origin.Y
+                            | Alignment.End     -> origin.Y + available.Y - sz.Y
+                            | Alignment.Center  -> origin.Y + (available.Y - sz.Y) * 0.5f
+                            | Alignment.Stretch -> origin.Y
                         Vec2.Create(penX, y)
                     let childAvail =
                         match alignment with
-                        | Stretch -> Vec2.Create(sz.X, available.Y)
+                        | Alignment.Stretch -> Vec2.Create(sz.X, available.Y)
                         | _       -> sz
                     let r = layout c childOrigin childAvail
                     penX <- penX + sz.X + gap
@@ -235,14 +246,14 @@ module LayoutEngine =
                     let childOrigin =
                         let x =
                             match alignment with
-                            | Start   -> origin.X
-                            | End     -> origin.X + available.X - sz.X
-                            | Center  -> origin.X + (available.X - sz.X) * 0.5f
-                            | Stretch -> origin.X
+                            | Alignment.Start   -> origin.X
+                            | Alignment.End     -> origin.X + available.X - sz.X
+                            | Alignment.Center  -> origin.X + (available.X - sz.X) * 0.5f
+                            | Alignment.Stretch -> origin.X
                         Vec2.Create(x, penY)
                     let childAvail =
                         match alignment with
-                        | Stretch -> Vec2.Create(available.X, sz.Y)
+                        | Alignment.Stretch -> Vec2.Create(available.X, sz.Y)
                         | _       -> sz
                     let r = layout c childOrigin childAvail
                     penY <- penY + sz.Y + gap

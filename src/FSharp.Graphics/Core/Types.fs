@@ -117,7 +117,7 @@ type Color =
               B = (fg.B * fg.A + bg.B * bg.A * (1.0f - fg.A)) / outA
               A = outA }
 
-    member c.WithAlpha(a: float32) = { c with A = a }
+    member c.WithAlpha(a: float32) = Color.Create(c.R, c.G, c.B, a)
 
     /// Convert to packed 8-bit RGBA (sRGB approximation – direct clamp, no gamma).
     member c.ToRgba8() =

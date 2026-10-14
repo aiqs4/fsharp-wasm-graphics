@@ -14,13 +14,30 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Expose internal members to the test project -->
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>FSharp.Graphics.Tests</_Parameter1>
+    </AssemblyAttribute>
+    <!-- Expose internal members to the demo project -->
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>FSharp.Graphics.Demo</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- GlyphAura: production OpenType text shaping & SDF layout engine -->
+    <ProjectReference Include="../../lib/GlyphAura/src/GlyphAura/GlyphAura.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Core foundation types (order matters in F#) -->
     <Compile Include="Core/Types.fs" />
     <Compile Include="Core/Paint.fs" />
     <Compile Include="Core/ISdfShape.fs" />
 
-    <!-- Text subsystem (GlyphAuro compatibility layer) -->
+    <!-- Text subsystem: GlyphAuro compatibility layer + GlyphAura production bridge -->
     <Compile Include="Text/TextNode.fs" />
+    <Compile Include="Text/GlyphAuraBridge.fs" />
 
     <!-- SDF shape implementations -->
     <Compile Include="Primitives/SdfShapes.fs" />

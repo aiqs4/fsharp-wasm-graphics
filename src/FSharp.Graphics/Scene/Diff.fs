@@ -11,7 +11,7 @@ open FSharp.Graphics.Primitives
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Minimal set of changes between two scene frames.
-[<NoComparison>]
+[<NoEquality; NoComparison>]
 type Delta =
     /// The sub-tree is identical to the previous frame – nothing to do.
     | NoChange
@@ -88,6 +88,9 @@ module Diff =
             if primitiveEq a b then NoChange else Replace next
         | Text  a,  Text  b  ->
             if textNodeEq a b then NoChange else Replace next
+        | RichText(a, pa), RichText(b, pb) ->
+            // GlyphAura TextNode identity: same reference = unchanged; positions differ = replace.
+            if obj.ReferenceEquals(a, b) && pa = pb then NoChange else Replace next
         | Image(ia, ra, oa), Image(ib, rb, ob) ->
             if ia = ib && ra = rb && oa = ob then NoChange else Replace next
 
@@ -174,7 +177,9 @@ module Diff =
             let deltas =
                 [| for i = 0 to pa.Length - 1 do
                        let d = diff pa.[i] na.[i]
-                       if not (d = NoChange) then yield i, d |]
+                       match d with
+                       | NoChange -> ()
+                       | _ -> yield i, d |]
             if deltas.Length = 0 then NoChange
             else UpdateChildren (List.ofArray deltas)
 

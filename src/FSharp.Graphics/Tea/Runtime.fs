@@ -121,7 +121,11 @@ type Runtime<'Model, 'Msg>(program: Program<'Model, 'Msg>) =
     do
         let (initModel, initCmds) = program.Init()
         model <- initModel
-        Runtime<'Model,'Msg>.ScheduleCmds(msgQueue, initCmds)
+        // Enqueue any immediate messages from startup commands.
+        for cmd in Cmd.flatten initCmds do
+            match cmd with
+            | Emit msg -> msgQueue.Enqueue msg
+            | _        -> ()
 
     // ── Dispatch ─────────────────────────────────────────────────────────────
 
@@ -150,8 +154,8 @@ type Runtime<'Model, 'Msg>(program: Program<'Model, 'Msg>) =
         // 4. Apply delta to cached tree.
         cachedTree <-
             match delta with
-            | Diff.NoChange -> cachedTree
-            | _             -> Render.Internal.CachedNode.applyDelta delta cachedTree
+            | NoChange -> cachedTree
+            | _        -> Render.Internal.CachedNode.applyDelta delta cachedTree
 
         // 5. Produce DrawList.
         let drawList = Render.Internal.CachedNode.getDrawList cachedTree shapeCache
@@ -161,8 +165,8 @@ type Runtime<'Model, 'Msg>(program: Program<'Model, 'Msg>) =
 
         // 7. Submit.
         match onSubmitFrame with
-        | Some f -> f (buf, len)
-        | None   -> ()
+        | Some f    -> f (buf, len)
+        | Option.None -> ()
 
         prevScene <- Some scene
 
@@ -203,6 +207,29 @@ type Runtime<'Model, 'Msg>(program: Program<'Model, 'Msg>) =
 
     member _.Model = model
 
+    // ── Static factory helpers ────────────────────────────────────────────────
+
+    /// Start a TEA program and return the Runtime handle.
+    static member Start(program: Program<'Model, 'Msg>) =
+        Runtime<'Model, 'Msg>(program)
+
+    /// Convenience: run a program for exactly N frames with a list of
+    /// per-frame message batches (useful for unit tests / headless rendering).
+    static member RunHeadless
+            (program : Program<'Model, 'Msg>)
+            (frames  : 'Msg list list)
+            : byte[] list =
+        let rt = Runtime<'Model, 'Msg>(program)
+        let results = System.Collections.Generic.List<byte[]>()
+        rt.OnSubmitFrame(fun (buf, len) ->
+            let copy = Array.sub buf 0 len
+            results.Add copy)
+        for frameMsgs in frames do
+            for msg in frameMsgs do
+                rt.Dispatch msg
+            rt.RenderFrame(0.0)
+        List.ofSeq results
+
     // ── Input dispatch helper ─────────────────────────────────────────────────
 
     static member private DispatchInput(evt: InputEvent, scene: Scene, queue: System.Collections.Generic.Queue<_>) =
@@ -218,13 +245,15 @@ type Runtime<'Model, 'Msg>(program: Program<'Model, 'Msg>) =
         | Clip(_, c) | Padding(_, c) | Transform(_, c)
         | Opacity(_, c) | Animated(_, c) ->
             Runtime<'Model,'Msg>.DispatchInput(evt, c, queue)
-        | _ -> false
+        | RichText _ | Shape _ | Text _ | Image _ | Empty -> false
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Module-level convenience helpers
+// Module-level convenience helpers (renamed to avoid clash with type Runtime<_,_>)
 // ─────────────────────────────────────────────────────────────────────────────
 
-module Runtime =
+/// Functional helpers for creating and running a Runtime.
+/// Prefer using the static members on Runtime<_,_> directly when the type is in scope.
+module RuntimeHelpers =
 
     /// Start a TEA program and return the Runtime handle.
     let start (program: Program<'Model, 'Msg>) =

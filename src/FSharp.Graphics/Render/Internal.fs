@@ -31,6 +31,8 @@ type internal TextState(node: TextNode) =
 type internal CachedNode =
     | CachedShape     of state     : ShapeState
     | CachedText      of state     : TextState
+    /// GlyphAura-backed retained-mode text node with its own dirty flag and LRU cache.
+    | CachedRichText  of node      : GlyphAura.TextNode.TextNode * position : Vec2
     | CachedImage     of imageId   : ImageId * destRect : Rect * opacity : float32
     | CachedGroup     of children  : CachedNode array * dirty : bool ref * lastBounds : Rect ref
     | CachedStack     of direction : Direction * gap : float32 * alignment : Alignment
@@ -51,9 +53,10 @@ module internal CachedNode =
 
     let rec build (scene: Scene) : CachedNode =
         match scene with
-        | Scene.Shape p          -> CachedShape(ShapeState(p))
-        | Scene.Text n           -> CachedText(TextState(n))
-        | Scene.Image(id, r, op) -> CachedImage(id, r, op)
+        | Scene.Shape p               -> CachedShape(ShapeState(p))
+        | Scene.Text n                -> CachedText(TextState(n))
+        | Scene.RichText(n, pos)      -> CachedRichText(n, pos)
+        | Scene.Image(id, r, op)      -> CachedImage(id, r, op)
         | Scene.Group children   ->
             CachedGroup(Array.map build (List.toArray children), ref true, ref Rect.Zero)
         | Scene.Stack(d, g, a, children) ->
@@ -66,27 +69,27 @@ module internal CachedNode =
         | Scene.Animated(t, c)  -> CachedAnimated(t, build c, ref true)
         | Scene.Empty           -> CachedEmpty
 
-    let rec applyDelta (delta: Diff.Delta) (node: CachedNode) : CachedNode =
+    let rec applyDelta (delta: Delta) (node: CachedNode) : CachedNode =
         match delta with
-        | Diff.NoChange -> node
-        | Diff.Replace newScene -> build newScene
+        | NoChange -> node
+        | Replace newScene -> build newScene
 
-        | Diff.UpdateTransform newMatrix ->
+        | UpdateTransform newMatrix ->
             match node with
             | CachedTransform(_, c, _) -> CachedTransform(newMatrix, c, ref true)
             | _ -> build (Transform(newMatrix, Empty))
 
-        | Diff.UpdateOpacity newAlpha ->
+        | UpdateOpacity newAlpha ->
             match node with
             | CachedOpacity(_, c, _) -> CachedOpacity(newAlpha, c, ref true)
             | _ -> build (Opacity(newAlpha, Empty))
 
-        | Diff.UpdateClip newRegion ->
+        | UpdateClip newRegion ->
             match node with
             | CachedClip(_, c, _) -> CachedClip(newRegion, c, ref true)
             | _ -> build (Clip(newRegion, Empty))
 
-        | Diff.UpdateChildren childDeltas ->
+        | UpdateChildren childDeltas ->
             let applyChild (children: CachedNode array) =
                 let ch = Array.copy children
                 for (i, d) in childDeltas do
@@ -133,6 +136,15 @@ module internal CachedNode =
                 state.CachedDrawList <- ValueSome dl
                 state.Dirty <- false
                 dl
+
+        | CachedRichText(node, pos) ->
+            // Delegate to GlyphAura's own retained-mode update, using its own LRU cache.
+            let gaCache = GlyphAura.ShapeCache.defaultCache ()
+            let gaDl    = GlyphAura.TextNode.update node gaCache
+            let glyphs  = FSharp.Graphics.Text.DrawListAdapter.toGlyphPositions gaDl
+            [| SetTransform (Matrix3x2.Translation(pos.X, pos.Y))
+               DrawTextBatch(glyphs, node.FontId, node.FontSizePx, Color.Black)
+               SetTransform Matrix3x2.Identity |]
 
         | CachedImage(imageId, destRect, opacity) ->
             [| DrawImage(imageId, destRect, opacity) |]
