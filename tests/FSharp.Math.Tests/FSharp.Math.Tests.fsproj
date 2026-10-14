@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>FSharp.Math.Tests</AssemblyName>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Generators.fs" />
+    <Compile Include="ScalarTests.fs" />
+    <Compile Include="Vec2Tests.fs" />
+    <Compile Include="Mat3x2Tests.fs" />
+    <Compile Include="RectTests.fs" />
+    <Compile Include="ColorTests.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/FSharp.Math/FSharp.Math.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FsCheck" Version="3.3.2" />
+  </ItemGroup>
+</Project>
