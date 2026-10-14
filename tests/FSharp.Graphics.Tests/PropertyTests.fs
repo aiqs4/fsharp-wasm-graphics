@@ -586,18 +586,32 @@ let testEasingProperties () =
         )
     )
 
-    prop "Easing: all functions map [0,1] to [0,1]" (fun () ->
-        let easings = [| Linear; EaseIn; EaseOut; EaseInOut; Spring |]
+    prop "Easing: non-spring functions stay within [0,1]" (fun () ->
+        let easings = [| Linear; EaseIn; EaseOut; EaseInOut |]
         Check.One(
             fewTestsConfig,
             fun () ->
                 gen {
                     let! t = genT
-                    let! eIdx = FsGen.choose(0, 4)
+                    let! eIdx = FsGen.choose(0, 3)
                     return easings.[eIdx], t
                 } |> FsGen.sample 50 |> Array.forall (fun (e, t) ->
                     let v = Easing.evaluate e t
-                    v >= -0.05f && v <= 1.05f
+                    v >= -0.001f && v <= 1.001f
+                )
+        )
+    )
+
+    prop "Easing: Spring output is bounded within [-0.5, 2.0] (intentional overshoot)" (fun () ->
+        Check.One(
+            fewTestsConfig,
+            fun () ->
+                gen {
+                    let! t = genT
+                    return t
+                } |> FsGen.sample 50 |> Array.forall (fun t ->
+                    let v = Easing.evaluate Spring t
+                    v >= -0.5f && v <= 2.0f
                 )
         )
     )
