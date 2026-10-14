@@ -8,11 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="PropertyTests.fs" />
     <Compile Include="Tests.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../src/FSharp.Graphics/FSharp.Graphics.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FsCheck" Version="3.3.2" />
   </ItemGroup>
 
 </Project>

@@ -570,6 +570,15 @@ let main _ =
     printfn "-- TEA --"
     testTea ()
     printfn ""
+    printfn "============================="
+    printfn ""
+    printfn "=== Property-Based Tests (FsCheck) ==="
+    printfn ""
+    let (propPassed, propFailed) = PropertyTests.runAllPropertyTests ()
+    printfn ""
+    let totalPassed = passed + propPassed
+    let totalFailed = failed + propFailed
     printfn "==========================="
-    printfn "Results: %d passed, %d failed" passed failed
-    if failed > 0 then 1 else 0
+    printfn "Results: %d passed, %d failed (unit: %d/%d, property: %d/%d)"
+            totalPassed totalFailed passed failed propPassed propFailed
+    if totalFailed > 0 then 1 else 0
