@@ -3,7 +3,7 @@
        day a native FSharp.Graphics GPU backend replaces it. Native Skia binaries are referenced by
        the app that hosts it (see demo/FSharp.Graphics.DesktopRunner). -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <RootNamespace>FSharp.Graphics.Host.Skia</RootNamespace>
   </PropertyGroup>
   <ItemGroup>

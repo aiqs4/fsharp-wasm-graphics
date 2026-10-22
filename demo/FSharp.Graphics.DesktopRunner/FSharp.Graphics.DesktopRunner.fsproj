@@ -4,7 +4,7 @@
        backend all live in the libraries, so this host can be replaced without touching them. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <RootNamespace>FSharp.Graphics.DesktopRunner</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
