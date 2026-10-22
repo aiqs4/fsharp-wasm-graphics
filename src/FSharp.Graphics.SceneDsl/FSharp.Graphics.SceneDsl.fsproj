@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>FSharp.Graphics.SceneDsl</RootNamespace>
+    <AssemblyName>FSharp.Graphics.SceneDsl</AssemblyName>
+    <Optimize>true</Optimize>
+    <NuGetAudit>false</NuGetAudit>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Num.fs" />
+    <Compile Include="Optimize.fs" />
+    <Compile Include="Builders.fs" />
+    <Compile Include="Ops.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FSharp.Math/FSharp.Math.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Core/FSharp.Graphics.Core.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Scene/FSharp.Graphics.Scene.fsproj" />
+  </ItemGroup>
+</Project>

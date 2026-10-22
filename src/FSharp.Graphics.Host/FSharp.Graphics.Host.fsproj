@@ -2,7 +2,7 @@
   <!-- Desktop/.NET-only host services: protocol decoder, software backend, fonts, PNG.
        NEVER referenced by the WASM build. Backends (Skia, ...) live in their own projects. -->
   <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>FSharp.Graphics.Host</RootNamespace>
     <AssemblyName>FSharp.Graphics.Host</AssemblyName>
     <Nullable>disable</Nullable>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- GUI builder demo: a TEA application written with the Widgets library.
+       Library only; hosts (DesktopRunner, the headless Shots exporter) plug it in as a SceneDef. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>FSharp.Graphics.GuiBuilder</RootNamespace>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Model.fs" />
+    <Compile Include="Export.fs" />
+    <Compile Include="View.fs" />
+    <Compile Include="App.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FSharp.Graphics.Scenes/FSharp.Graphics.Scenes.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Tea/FSharp.Graphics.Tea.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.SceneDsl/FSharp.Graphics.SceneDsl.fsproj" />
+    <ProjectReference Include="../../src/FSharp.Graphics.Widgets/FSharp.Graphics.Widgets.fsproj" />
+  </ItemGroup>
+</Project>

@@ -2,7 +2,7 @@
   <!-- Feature-test scenes shared by every host (PNG export, desktop window, future browser).
        Pure Scene values: no host dependencies. -->
   <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>FSharp.Graphics.Scenes</RootNamespace>
   </PropertyGroup>
   <ItemGroup>

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>FSharp.Graphics.Widgets</RootNamespace>
+    <AssemblyName>FSharp.Graphics.Widgets</AssemblyName>
+    <Optimize>true</Optimize>
+    <NuGetAudit>false</NuGetAudit>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Theme.fs" />
+    <Compile Include="Csg.fs" />
+    <Compile Include="Memo.fs" />
+    <Compile Include="Ui.fs" />
+    <Compile Include="Widgets.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FSharp.Math/FSharp.Math.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Core/FSharp.Graphics.Core.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.Scene/FSharp.Graphics.Scene.fsproj" />
+    <ProjectReference Include="../FSharp.Graphics.SceneDsl/FSharp.Graphics.SceneDsl.fsproj" />
+  </ItemGroup>
+</Project>

@@ -124,7 +124,8 @@ let main argv =
     let (sceneArg, software, fontArg) = parse (None, false, None) (List.ofArray argv)
     fontArg |> Option.iter (fun f -> Environment.SetEnvironmentVariable("FSG_FONT", f))
     let fonts = FontLocator.loadDefault ()
-    let defs = Array.ofList Scenes.all
+    let builder = FSharp.Graphics.GuiBuilder.GuiBuilderDef.make (GlyphAuraTextEngine fonts :> ITextEngine)
+    let defs = Array.ofList (Scenes.all @ [ builder ])
     let startIndex =
         match sceneArg with
         | Some id -> (match Array.tryFindIndex (fun (d: SceneDef) -> d.Id = id) defs with Some i -> i | None -> failwithf "unknown scene '%s'" id)
@@ -172,6 +173,9 @@ let main argv =
         for kb in input.Keyboards do
             kb.add_KeyDown(Action<IKeyboard, Key, int>(fun _ key _ ->
                 match key with
+                // the GUI builder wants every key (typing, arrows); only quit / screenshot / paging stay global
+                | k when runner.Scene.Id = "builder" && k <> Key.Escape && k <> Key.F12 && k <> Key.PageUp && k <> Key.PageDown ->
+                    runner.Input(KeyDown(string k))
                 | Key.Right | Key.PageDown -> runner.Step 1
                 | Key.Left | Key.PageUp    -> runner.Step(-1)
                 | Key.B                    -> runner.ToggleBackend()

@@ -3,7 +3,7 @@
        Stage (resolve/diff/cache/encode) -> command stream -> decoder -> software backend. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>FSharp.Graphics.Demo</AssemblyName>
     <RootNamespace>FSharp.Graphics.Demo</RootNamespace>
   </PropertyGroup>

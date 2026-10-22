@@ -3,6 +3,8 @@
     <Project Path="demo/FSharp.Graphics.Demo/FSharp.Graphics.Demo.fsproj" />
     <Project Path="demo/FSharp.Graphics.DesktopRunner/FSharp.Graphics.DesktopRunner.fsproj" />
     <Project Path="demo/FSharp.Graphics.Scenes/FSharp.Graphics.Scenes.fsproj" />
+    <Project Path="demo/FSharp.Graphics.GuiBuilder/FSharp.Graphics.GuiBuilder.fsproj" />
+    <Project Path="demo/FSharp.Graphics.GuiBuilder.Shots/FSharp.Graphics.GuiBuilder.Shots.fsproj" />
   </Folder>
   <Folder Name="/lib/">
     <Project Path="lib/GlyphAura/src/GlyphAura/GlyphAura.fsproj" />
@@ -12,6 +14,8 @@
     <Project Path="src/FSharp.Graphics.Primitives/FSharp.Graphics.Primitives.fsproj" />
     <Project Path="src/FSharp.Graphics.Render/FSharp.Graphics.Render.fsproj" />
     <Project Path="src/FSharp.Graphics.Scene/FSharp.Graphics.Scene.fsproj" />
+    <Project Path="src/FSharp.Graphics.SceneDsl/FSharp.Graphics.SceneDsl.fsproj" />
+    <Project Path="src/FSharp.Graphics.Widgets/FSharp.Graphics.Widgets.fsproj" />
     <Project Path="src/FSharp.Graphics/FSharp.Graphics.fsproj" />
     <Project Path="src/FSharp.Graphics.Tea/FSharp.Graphics.Tea.fsproj" />
     <Project Path="src/FSharp.Graphics.Host/FSharp.Graphics.Host.fsproj" />
