@@ -1,6 +1,7 @@
 namespace FSharp.Graphics.GuiBuilder
 
 open System
+open FSharp.Math
 open FSharp.Graphics.Tea
 open FSharp.Graphics.Widgets
 
@@ -41,7 +42,8 @@ type Model =
       DarkDesign: bool
       Preview: bool
       ShowCode: bool
-      CodeScroll: float32 }
+      CodeScroll: float32
+      VariantOpen: bool }
 
 type Msg =
     | UiMsg of UiMsg
@@ -52,7 +54,8 @@ type Msg =
     | SetText of id: int * string
     | SetOn of id: int * bool
     | SetValue of id: int * float32
-    | CycleVariant of id: int
+    | ToggleVariantMenu
+    | SetVariant of id: int * Button.Variant
     | Delete
     | Duplicate
     | BringToFront
@@ -63,6 +66,7 @@ type Msg =
     | ScrollCode of float32
 
 module Model =
+    let variants = [ Button.Primary; Button.Secondary; Button.Danger; Button.Ghost ]
     let snap (v: float32) = MathF.Round(v / 8.0f) * 8.0f
 
     let newNode (id: int) (kind: Kind) (x: float32) (y: float32) : Node =
@@ -79,7 +83,7 @@ module Model =
               mk 4 KCheck 48.0f 184.0f (fun n -> { n with Text = "Remember me"; On = true })
               mk 5 KButton 48.0f 224.0f (fun n -> { n with Text = "Sign in"; W = 280.0f }) ]
         { Nodes = nodes; NextId = 6; Selected = Some 5; Ui = UiState.empty
-          DarkDesign = true; Preview = false; ShowCode = false; CodeScroll = 0.0f }, Cmd.none
+          DarkDesign = true; Preview = false; ShowCode = false; CodeScroll = 0.0f; VariantOpen = false }, Cmd.none
 
     let private mapNode id f (m: Model) =
         { m with Nodes = m.Nodes |> List.map (fun n -> if n.Id = id then f n else n) }
@@ -87,7 +91,6 @@ module Model =
     let private selectedNode (m: Model) =
         m.Selected |> Option.bind (fun id -> m.Nodes |> List.tryFind (fun n -> n.Id = id))
 
-    let private variants = [ Button.Primary; Button.Secondary; Button.Danger; Button.Ghost ]
 
     let update (m: Model) (msg: Msg) : Model * Cmd<Msg> =
         let m' =
@@ -104,10 +107,8 @@ module Model =
             | SetText(id, t) -> mapNode id (fun n -> { n with Text = t }) m
             | SetOn(id, v) -> mapNode id (fun n -> { n with On = v }) m
             | SetValue(id, v) -> mapNode id (fun n -> { n with Value = v }) m
-            | CycleVariant id ->
-                mapNode id (fun n ->
-                    let i = List.findIndex ((=) n.Variant) variants
-                    { n with Variant = variants.[(i + 1) % variants.Length] }) m
+            | ToggleVariantMenu -> { m with VariantOpen = not m.VariantOpen }
+            | SetVariant(id, v) -> mapNode id (fun n -> { n with Variant = v }) { m with VariantOpen = false }
             | Delete ->
                 match m.Selected with
                 | Some id -> { m with Nodes = m.Nodes |> List.filter (fun n -> n.Id <> id); Selected = None }
@@ -127,12 +128,29 @@ module Model =
             | ToggleCode -> { m with ShowCode = not m.ShowCode; CodeScroll = 0.0f }
             | ScrollCode v -> { m with CodeScroll = v }
             | Key key ->
+                let order (n: Node) =
+                    [ if Kind.hasText n.Kind then yield "insp-text"
+                      if n.Kind = KButton then yield "insp-variant"
+                      yield "insp-x"; yield "insp-y"
+                      if Kind.hasWidth n.Kind then yield "insp-w"
+                      if Kind.hasValue n.Kind then yield "insp-v"
+                      yield "insp-dup"; yield "insp-front"; yield "insp-del" ]
                 match m.Ui.Focus, selectedNode m with
-                | Some "insp-text", Some n ->
+                | Some "insp-text", Some n when key <> "Tab" ->
                     match key with
                     | "Enter" | "Escape" -> { m with Ui = UiState.update m.Ui UiMsg.Blur }
-                    | "Tab" -> { m with Ui = UiState.cycleFocus [ "insp-text" ] false m.Ui }
-                    | k -> mapNode n.Id (fun n -> { n with Text = TextEdit.apply k n.Text }) m
+                    | k -> mapNode n.Id (fun n -> { n with Text = TextEdit.apply m.Ui.Shift k n.Text }) m
+                | _, Some n when key = "Tab" ->
+                    { m with Ui = UiState.cycleFocus (order n) m.Ui.Shift m.Ui }
+                // keyboard control of a focused slider: arrows step by 5 % of its range
+                | Some f, Some n when (key = "Left" || key = "Right") && f.StartsWith "insp-" && f <> "insp-text" ->
+                    let dir = if key = "Left" then -1.0f else 1.0f
+                    match f with
+                    | "insp-x" -> mapNode n.Id (fun n -> { n with X = max 0.0f (snap (n.X + dir * 8.0f)) }) m
+                    | "insp-y" -> mapNode n.Id (fun n -> { n with Y = max 0.0f (snap (n.Y + dir * 8.0f)) }) m
+                    | "insp-w" -> mapNode n.Id (fun n -> { n with W = max 40.0f (n.W + dir * 8.0f) }) m
+                    | "insp-v" -> mapNode n.Id (fun n -> { n with Value = Scalar.clamp 0.0f 1.0f (n.Value + dir * 0.05f) }) m
+                    | _ -> m
                 | _, Some n ->
                     let d = 8.0f
                     match key with

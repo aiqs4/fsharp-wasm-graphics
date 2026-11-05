@@ -13,12 +13,14 @@ open FSharp.Graphics.Primitives
 module Hit =
 
     [<Struct>]
-    type Target = { Id: int; Handler: InputEvent -> bool }
+    type Target = { Id: int; Handler: InputEvent -> bool; ToLocal: Mat3x2 }
 
     let private contains (p: Vec2) (r: Rect) = Rect.contains p r
 
-    let rec private collect (s: Scene) (p: Vec2) (path: int) (acc: ResizeArray<Target>) : bool =
-        let child i c = collect c p (path * 31 + i + 1) acc
+    /// `toLocal` maps window coordinates into the current node's local space (accumulated inverse of
+    /// the enclosing transforms); handlers receive pointer positions in *their own* local space.
+    let rec private collect (s: Scene) (p: Vec2) (toLocal: Mat3x2) (path: int) (acc: ResizeArray<Target>) : bool =
+        let child i c = collect c p toLocal (path * 31 + i + 1) acc
         match s with
         | Empty | Text _ -> false
         | Shape sh ->
@@ -41,12 +43,12 @@ module Hit =
         | Scene.Clip(r, c) -> contains p r && child 0 c
         | Transform(m, c) ->
             match Mat3x2.invert m with
-            | Some inv -> collect c (Mat3x2.transformPoint inv p) (path * 31 + 1) acc
+            | Some inv -> collect c (Mat3x2.transformPoint inv p) (Mat3x2.multiply toLocal inv) (path * 31 + 1) acc
             | None -> false
         | Reactive(h, c) ->
             let id = path * 31 + 7
-            let hit = collect c p id acc
-            if hit then acc.Add { Id = id; Handler = h }
+            let hit = collect c p toLocal id acc
+            if hit then acc.Add { Id = id; Handler = h; ToLocal = toLocal }
             hit
         | Padding(_, c) | Opacity(_, c) | Animated(_, c) | Blur(_, c)
         | ColorFilter(_, c) | BlendMode(_, c) | Mask(_, c) -> child 0 c
@@ -54,7 +56,7 @@ module Hit =
     /// Reactive targets under `p`, innermost first (bubbling order).
     let pick (scene: Scene) (p: Vec2) : Target[] =
         let acc = ResizeArray<Target>()
-        collect scene p 17 acc |> ignore
+        collect scene p Mat3x2.identity 17 acc |> ignore
         acc.ToArray()
 
     /// Stateful router: hover tracking (enter/leave), press capture, bubbling until handled.
@@ -63,7 +65,18 @@ module Hit =
         let mutable pressed : Target[] = [||]
 
         let has (ts: Target[]) (t: Target) = ts |> Array.exists (fun x -> x.Id = t.Id)
-        let bubble (ts: Target[]) (evt: InputEvent) = ts |> Array.exists (fun t -> t.Handler evt)
+        /// Express pointer positions in the target's own coordinate space.
+        let local (t: Target) (evt: InputEvent) =
+            let f p = Mat3x2.transformPoint t.ToLocal p
+            match evt with
+            | PointerDown(p, b)  -> PointerDown(f p, b)
+            | PointerUp(p, b)    -> PointerUp(f p, b)
+            | PointerMove p      -> PointerMove(f p)
+            | PointerEnter p     -> PointerEnter(f p)
+            | PointerLeave p     -> PointerLeave(f p)
+            | other -> other
+        let send (t: Target) (evt: InputEvent) = t.Handler (local t evt)
+        let bubble (ts: Target[]) (evt: InputEvent) = ts |> Array.exists (fun t -> send t evt)
 
         /// Ids of the targets currently under the pointer.
         member _.Hover = hover |> Array.map (fun t -> t.Id)
@@ -73,8 +86,8 @@ module Hit =
             match evt with
             | PointerMove p ->
                 let now = pick scene p
-                for t in hover do if not (has now t) then t.Handler (PointerLeave p) |> ignore
-                for t in now   do if not (has hover t) then t.Handler (PointerEnter p) |> ignore
+                for t in hover do if not (has now t) then send t (PointerLeave p) |> ignore
+                for t in now   do if not (has hover t) then send t (PointerEnter p) |> ignore
                 hover <- now
                 // implicit capture: while pressed, the press target keeps receiving moves (drags)
                 bubble (if pressed.Length > 0 then pressed else now) evt

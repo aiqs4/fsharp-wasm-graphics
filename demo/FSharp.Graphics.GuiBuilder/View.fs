@@ -145,11 +145,6 @@ module View =
                 child (Label.view ui Label.Heading ("Inspector  -  " + Kind.name n.Kind))
                 childIf (Kind.hasText n.Kind)
                     (field ui "Text" (TextField.view ui "insp-text" { Value = n.Text; Placeholder = "(empty)"; Width = 220.0f }))
-                childIf (n.Kind = KButton)
-                    (field ui "Variant"
-                        (Button.view ui "insp-variant"
-                            { Button.make (sprintf "%A" n.Variant) (fun () -> send (CycleVariant n.Id)) with
-                                Variant = Button.Secondary; Width = ValueSome 220.0f }))
                 child (field ui (sprintf "X  (%d)" (int n.X)) (sl "insp-x" 0.0f canvasW n.X (fun v -> MoveTo(n.Id, Model.snap v, n.Y))))
                 child (field ui (sprintf "Y  (%d)" (int n.Y)) (sl "insp-y" 0.0f 600.0f n.Y (fun v -> MoveTo(n.Id, n.X, Model.snap v))))
                 childIf (Kind.hasWidth n.Kind)
@@ -164,6 +159,13 @@ module View =
                     child (Button.view ui "insp-dup" { Button.make "Duplicate" (fun () -> send Duplicate) with Variant = Button.Secondary })
                     child (Button.view ui "insp-front" { Button.make "To front" (fun () -> send BringToFront) with Variant = Button.Secondary })
                 })
+                childIf (n.Kind = KButton)
+                    (field ui "Variant"
+                        (Dropdown.view ui "insp-variant"
+                            { Options = Model.variants |> List.map (sprintf "%A"); Selected = List.findIndex ((=) n.Variant) Model.variants
+                              Open = m.VariantOpen; Width = 220.0f
+                              OnToggle = (fun () -> send ToggleVariantMenu)
+                              OnSelect = fun i -> send (SetVariant(n.Id, Model.variants.[i])) }))
                 child (Button.view ui "insp-del" { Button.make "Delete" (fun () -> send Delete) with Variant = Button.Danger; Width = ValueSome 220.0f })
             }
 

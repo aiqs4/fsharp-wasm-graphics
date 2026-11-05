@@ -36,7 +36,7 @@ let dsl () : Scene =
 /// Every widget in every visible state (state injected through `UiState`).
 let gallery (ui: Ui<unit>) : Scene =
     let th = ui.Theme
-    let st (h: string option) (p: string option) (f: string option) = { ui with State = { Hover = h; Pressed = p; Focus = f } }
+    let st (h: string option) (p: string option) (f: string option) = { ui with State = { UiState.empty with Hover = h; Pressed = p; Focus = f } }
     let hov = st (Some "b-hover") None None
     let prs = st None (Some "b-press") None
     let foc = st None None (Some "tf")
@@ -64,6 +64,8 @@ let gallery (ui: Ui<unit>) : Scene =
                          child (TextField.view ui "tf0" { Value = "Hello"; Placeholder = "Type"; Width = 200.0f })
                          child (TextField.view foc "tf" { Value = "Focused"; Placeholder = "Type"; Width = 200.0f })
                          child (TextField.view ui "tf2" { Value = ""; Placeholder = "Placeholder"; Width = 200.0f }) })
+            child (Dropdown.view ui "dd" { Options = [ "Small"; "Medium"; "Large" ]; Selected = 1; Open = true; Width = 200.0f
+                                           OnToggle = ignore; OnSelect = ignore })
             child (Divider.horizontal ui 640.0f)
             child (Label.view ui Label.Muted "Cards hug their content:")
             child (Panel.view ui Panel.card

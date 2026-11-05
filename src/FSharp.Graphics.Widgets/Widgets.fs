@@ -144,8 +144,8 @@ module ProgressBar =
 module Slider =
     type Props = { Min: float32; Max: float32; Value: float32; Width: float32; OnChange: float32 -> unit }
 
-    /// Dragging works with relative motion from the press point (pointer events carry window
-    /// coordinates, and a widget does not know where layout placed it), so the thumb never jumps.
+    /// Pointer positions arrive in the slider's own local space, so the track maps directly to the
+    /// value: clicking jumps, dragging follows the pointer (captured until release).
     let view (ui: Ui<'m>) (id: string) (p: Props) : Scene =
         let th = ui.Theme
         let range = Scalar.max' (p.Max - p.Min) 1e-6f
@@ -167,8 +167,7 @@ module Slider =
                 rectangle { bounds 0.0f 0.0f p.Width 20.0f; fill Color.Transparent }
             ]
         let dragging = ref false
-        let startX = ref 0.0f
-        let startV = p.Value
+        let valueAt (x: float32) = Scalar.clamp p.Min p.Max (p.Min + (x - 8.0f) / Scalar.max' usable 1.0f * range)
         Reactive(
             (fun e ->
                 match e with
@@ -176,14 +175,11 @@ module Slider =
                 | PointerLeave _ -> ui.Send(ui.Lift(UiMsg.Unhover id)); true
                 | PointerDown(pt, 0) ->
                     dragging.Value <- true
-                    startX.Value <- pt.X
                     ui.Send(ui.Lift(UiMsg.Press id))
                     ui.Send(ui.Lift(UiMsg.Focus id))
+                    p.OnChange (valueAt pt.X)          // click on the track jumps there
                     true
-                | PointerMove pt when dragging.Value ->
-                    let dv = (pt.X - startX.Value) / Scalar.max' usable 1.0f * range
-                    p.OnChange (Scalar.clamp p.Min p.Max (startV + dv))
-                    true
+                | PointerMove pt when dragging.Value -> p.OnChange (valueAt pt.X); true
                 | PointerUp _ when dragging.Value ->
                     dragging.Value <- false
                     ui.Send(ui.Lift UiMsg.Release)
@@ -244,3 +240,50 @@ module ScrollView =
                 | Scroll d -> p.OnScroll (Scalar.clamp 0.0f maxOff (off - d.Y * 36.0f)); true
                 | _ -> false),
             body)
+
+module Dropdown =
+    type Props =
+        { Options: string list
+          Selected: int
+          Open: bool
+          Width: float32
+          OnToggle: unit -> unit
+          OnSelect: int -> unit }
+
+    /// The open menu is drawn below the header; place the dropdown late in its parent `Group`
+    /// so the menu paints (and hit-tests) above siblings.
+    let view (ui: Ui<'m>) (id: string) (p: Props) : Scene =
+        let th = ui.Theme
+        let h = th.ControlHeight
+        let ty = (h - th.FontSize * 1.2f) * 0.5f
+        let current = match List.tryItem p.Selected p.Options with Some s -> s | None -> ""
+        let header =
+            Group [
+                rectangle { bounds 0.0f 0.0f p.Width h; radius th.Radius; fill th.Background
+                            stroke (if p.Open || Ui.isFocused ui id then th.Accent else th.Border) 1.5f }
+                shift 10.0f ty (Text(current, Ui.textStyle ui th.FontSize th.Text))
+                // chevron
+                Group [ Shape(Path(LineSdf(Vec2.create (p.Width - 22.0f) (h * 0.5f - 2.0f), Vec2.create (p.Width - 16.0f) (h * 0.5f + 3.0f), 1.8f), Solid th.TextMuted, None, None))
+                        Shape(Path(LineSdf(Vec2.create (p.Width - 16.0f) (h * 0.5f + 3.0f), Vec2.create (p.Width - 10.0f) (h * 0.5f - 2.0f), 1.8f), Solid th.TextMuted, None, None)) ]
+            ]
+        let menu =
+            if not p.Open then Empty
+            else
+                let rows =
+                    p.Options
+                    |> List.mapi (fun i o ->
+                        let rid = sprintf "%s/%d" id i
+                        let hot = Ui.isHover ui rid
+                        let row =
+                            Group [
+                                rectangle { bounds 0.0f 0.0f (p.Width - 8.0f) 30.0f; radius 6.0f
+                                            fill (if hot then th.Accent elif i = p.Selected then th.SurfaceRaised else Color.Transparent) }
+                                shift 10.0f 5.0f (Text(o, Ui.textStyle ui th.FontSize (if hot then th.OnAccent else th.Text)))
+                            ]
+                        shift 4.0f (4.0f + float32 i * 30.0f) (Ui.interactive ui rid (fun () -> p.OnSelect i) row))
+                let mh = float32 p.Options.Length * 30.0f + 8.0f
+                shift 0.0f (h + 4.0f)
+                    (Group [ rectangle { bounds 0.0f 0.0f p.Width mh; radius th.Radius; fill th.Surface
+                                         stroke th.Border 1; shadow 0 8 18 (rgba 0 0 0 110) }
+                             Group rows ])
+        Group [ Ui.interactive ui id p.OnToggle header; menu ]

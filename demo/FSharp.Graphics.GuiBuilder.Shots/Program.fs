@@ -104,6 +104,21 @@ let main argv =
     app.Dispatch (UiMsg (UiMsg.Focus "insp-text"))
     for k in [ "Backspace"; "Backspace"; "O"; "K"; "Space"; "Number1" ] do key k
     check "inspector text editing via keys" ((app.Model.Nodes |> List.find (fun n -> n.Id = 5)).Text = "Sign ok 1")
+    // Shift is tracked through the real key path (ShiftLeft down/up)
+    app.Dispatch (Select (Some 5))
+    app.Dispatch (UiMsg (UiMsg.Focus "insp-text"))
+    key "ShiftLeft"; key "A"; key "Number1"
+    stage.Input(KeyUp "ShiftLeft") |> ignore
+    key "B"
+    check "Shift gives capitals and symbols" ((app.Model.Nodes |> List.find (fun n -> n.Id = 5)).Text = "Sign ok 1A!b")
+    app.Dispatch (UiMsg (UiMsg.Blur))
+    // Tab walks the inspector controls; arrows then adjust the focused slider
+    app.Dispatch (Select (Some 6))
+    key "Tab"
+    check "Tab moves focus (x slider)" (app.Model.Ui.Focus = Some "insp-x")
+    let x0 = (app.Model.Nodes |> List.find (fun n -> n.Id = 6)).X
+    key "Right"
+    check "arrow adjusts focused slider" ((app.Model.Nodes |> List.find (fun n -> n.Id = 6)).X = x0 + 8.0f)
     app.Dispatch (UiMsg (UiMsg.Blur))
     app.Dispatch (Select (Some 6))
     app.Dispatch ToggleCode
@@ -111,4 +126,13 @@ let main argv =
     app.Dispatch ToggleCode
     app.Dispatch TogglePreview
     frame (Some "builder-5-preview")
+    // pointer-driven slider: click the preview-mode slider track at 75 % of its width
+    app.Dispatch (UiMsg (UiMsg.Blur))
+    if not app.Model.Preview then app.Dispatch TogglePreview
+    frame None
+    let sl = app.Model.Nodes |> List.find (fun n -> n.Id = 6)
+    // canvas origin is (190, 52); slider track spans X + 8 .. X + W - 8
+    let cx = 190.0f + sl.X + 8.0f + (sl.W - 16.0f) * 0.75f
+    click cx (52.0f + sl.Y + 10.0f)
+    check "slider click jumps to local position" (abs ((app.Model.Nodes |> List.find (fun n -> n.Id = 6)).Value - 0.75f) < 0.02f)
     if failures > 0 then 1 else 0

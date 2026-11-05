@@ -9,7 +9,8 @@ open FSharp.Graphics.Scene
 type UiState =
     { Hover: string option
       Pressed: string option
-      Focus: string option }
+      Focus: string option
+      Shift: bool }
 
 [<RequireQualifiedAccess>]
 type UiMsg =
@@ -19,9 +20,10 @@ type UiMsg =
     | Release
     | Focus of string
     | Blur
+    | Shift of bool
 
 module UiState =
-    let empty = { Hover = None; Pressed = None; Focus = None }
+    let empty = { Hover = None; Pressed = None; Focus = None; Shift = false }
 
     let update (s: UiState) (m: UiMsg) : UiState =
         match m with
@@ -31,6 +33,7 @@ module UiState =
         | UiMsg.Release    -> { s with Pressed = None }
         | UiMsg.Focus id   -> { s with Focus = Some id }
         | UiMsg.Blur       -> { s with Focus = None }
+        | UiMsg.Shift v    -> { s with Shift = v }
 
     /// Tab / Shift+Tab over an explicit focus order.
     let cycleFocus (order: string list) (backwards: bool) (s: UiState) : UiState =
@@ -87,11 +90,10 @@ module Ui =
                 | PointerEnter _ -> emit ui (UiMsg.Hover id); true
                 | PointerLeave _ -> emit ui (UiMsg.Unhover id); true
                 | PointerDown(_, 0) -> emit ui (UiMsg.Press id); emit ui (UiMsg.Focus id); true
-                | PointerUp(_, 0) ->
-                    // activation on release (the press target keeps the pointer, so we cannot
-                    // tell here whether the pointer is still over the widget)
+                | PointerUp(p, 0) ->
                     emit ui UiMsg.Release
-                    onClick ()
+                    // pointer positions are local to this widget: activate only if released over it
+                    if Rect.contains p (measure ui content) then onClick ()
                     true
                 | _ -> false),
             content)
@@ -102,6 +104,8 @@ module Ui =
         Reactive(
             (fun e ->
                 match e with
+                | KeyDown ("ShiftLeft" | "ShiftRight") -> emit ui (UiMsg.Shift true); true
+                | KeyUp ("ShiftLeft" | "ShiftRight") -> emit ui (UiMsg.Shift false); true
                 | KeyDown k -> onKey k; true
                 | PointerDown _ -> emit ui UiMsg.Blur; false
                 | _ -> false),
@@ -114,16 +118,21 @@ module TextEdit =
         dict [ "Space", " "; "Period", "."; "Comma", ","; "Minus", "-"; "Slash", "/"; "Semicolon", ";"
                "Apostrophe", "'"; "Equal", "="; "Underscore", "_" ]
 
-    let keyChar (key: string) : string option =
-        if key.Length = 1 && Char.IsLetterOrDigit key.[0] then Some (key.ToLowerInvariant())
-        elif key.StartsWith "Number" && key.Length = 7 && Char.IsDigit key.[6] then Some (key.Substring 6)
-        elif key.StartsWith "Keypad" && key.Length = 7 && Char.IsDigit key.[6] then Some (key.Substring 6)
-        else
-            match punct.TryGetValue key with
-            | true, c -> Some c
-            | _ -> None
+    let private shifted =
+        dict [ "1", "!"; "2", "@"; "3", "#"; "4", "$"; "5", "%"; "6", "^"; "7", "&"; "8", "*"; "9", "("; "0", ")"
+               "-", "_"; "=", "+"; ";", ":"; "'", "\""; ",", "<"; ".", ">"; "/", "?" ]
 
-    let apply (key: string) (value: string) : string =
+    let keyChar (shift: bool) (key: string) : string option =
+        let plain =
+            if key.Length = 1 && Char.IsLetterOrDigit key.[0] then Some (key.ToLowerInvariant())
+            elif (key.StartsWith "Number" || key.StartsWith "Keypad") && key.Length = 7 && Char.IsDigit key.[6] then Some (key.Substring 6)
+            else match punct.TryGetValue key with | true, c -> Some c | _ -> None
+        match plain with
+        | Some c when shift -> (match shifted.TryGetValue c with | true, u -> Some u | _ -> Some (c.ToUpperInvariant()))
+        | other -> other
+
+    /// Apply one key to the text (`shift` = Shift currently held, tracked in `UiState.Shift`).
+    let apply (shift: bool) (key: string) (value: string) : string =
         match key with
         | "Backspace" -> if value.Length > 0 then value.Substring(0, value.Length - 1) else value
-        | k -> match keyChar k with Some c -> value + c | None -> value
+        | k -> match keyChar shift k with Some c -> value + c | None -> value
